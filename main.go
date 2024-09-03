@@ -24,9 +24,8 @@ import (
 	"os"
 	"runtime"
 	"sync"
-	"time"
 
-	"github.com/gosuri/uilive"
+	"github.com/schollz/progressbar/v3"
 )
 
 func main() {
@@ -92,8 +91,6 @@ func main() {
 	wg.Wait()
 
 	// extract
-	start := time.Now()
-
 	data, err := os.Open(fmt.Sprintf("%s/%d.data", *storagedir, *depot))
 	if err != nil {
 		log.Fatalf("failed to open data file: %s", err)
@@ -125,33 +122,22 @@ func main() {
 		go extractorWorker(&wg, jobs, data, key)
 	}
 
-	// console related
-	console := uilive.New()
-	console.RefreshInterval = time.Minute
-
-	console.Start()
+	bar := progressbar.Default(int64(len(manifest.DirEntries)), "Extracting")
 
 	// create files
-	for i, e := range manifest.DirEntries {
+	for _, e := range manifest.DirEntries {
+		bar.Add(1)
+
 		if e.IsDirectory() {
 			continue
 		}
-
-		fmt.Fprintf(console, "%.0f%% %s\n", float32(i)/float32(len(manifest.DirEntries))*100, e.Path)
 
 		jobs <- ExtractorJob{
 			Path:  fmt.Sprintf("%s/%s", *outdir, e.Path),
 			Index: index[int(e.FileID)],
 		}
-
-		console.Flush()
 	}
-
-	fmt.Fprintf(console, "OK. (%s)\n", time.Since(start))
-
-	// done, clean up
-	console.Stop()
-
+	
 	close(jobs)
 
 	wg.Wait()

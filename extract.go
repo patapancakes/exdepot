@@ -35,11 +35,12 @@ type ExtractorJob struct {
 }
 
 func extractorWorker(wg *sync.WaitGroup, jobs chan ExtractorJob, data io.ReaderAt, key []byte) {
+	defer wg.Done()
+
 	for {
 		job, ok := <-jobs
 		if !ok {
-			wg.Done()
-			return
+			break
 		}
 
 		out, err := os.OpenFile(job.Path, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
