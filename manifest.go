@@ -21,7 +21,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
+	"strings"
 )
+
+var sanitize = strings.NewReplacer("\\", "", "/", "", ":", "", "*", "", "\"", "", "<", "", ">", "", "|", "").Replace
 
 type Manifest struct {
 	Dummy1       uint32 // unused
@@ -140,6 +144,11 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 		}
 
 		dirEntry.FileName = string(namebuf)
+
+		// windows doesn't allow certain characters in file names
+		if runtime.GOOS == "windows" {
+			dirEntry.FileName = sanitize(dirEntry.FileName)
+		}
 
 		manifest.DirEntries = append(manifest.DirEntries, dirEntry)
 	}
