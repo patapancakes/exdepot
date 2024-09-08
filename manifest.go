@@ -42,23 +42,23 @@ type Manifest struct {
 	Dummy2       uint32 // unused
 	Dummy3       uint32 // unused
 	Checksum     uint32 // unused
-	DirEntries   []DirEntry
+	Items        []Item
 }
 
-type DirEntry struct {
+type Item struct {
 	NameOffset  uint32
-	ItemSize    uint32
-	FileID      uint32
-	DirType     uint32
+	Size        uint32
+	ID          uint32
+	Type        uint32
 	ParentIndex uint32
 	NextIndex   uint32
 	FirstIndex  uint32
-	FileName    string
+	Name        string
 	Path        string // not in file
 }
 
-func (e DirEntry) IsDirectory() bool {
-	return e.DirType&0x4000 == 0
+func (i Item) IsDirectory() bool {
+	return i.Type&0x4000 == 0
 }
 
 func readManifest(manifestdir string, depot int, version int) (Manifest, error) {
@@ -103,26 +103,26 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 	for i := range manifest.NumItems {
 		_, err = r.Seek(int64(56+(i*28)), 0)
 		if err != nil {
-			return manifest, fmt.Errorf("failed to seek to directory entry: %s", err)
+			return manifest, fmt.Errorf("failed to seek to item: %s", err)
 		}
 
-		var dirEntry DirEntry
+		var item Item
 
 		v, err := readUint32List(r, 7)
 		if err != nil {
 			return manifest, fmt.Errorf("failed to read value: %s", err)
 		}
 
-		dirEntry.NameOffset = v[0]
-		dirEntry.ItemSize = v[1]
-		dirEntry.FileID = v[2]
-		dirEntry.DirType = v[3]
-		dirEntry.ParentIndex = v[4]
-		dirEntry.NextIndex = v[5]
-		dirEntry.FirstIndex = v[6]
+		item.NameOffset = v[0]
+		item.Size = v[1]
+		item.ID = v[2]
+		item.Type = v[3]
+		item.ParentIndex = v[4]
+		item.NextIndex = v[5]
+		item.FirstIndex = v[6]
 
 		// name offset but no name size? really???
-		_, err = r.Seek(int64(56+(manifest.NumItems*28)+dirEntry.NameOffset), 0)
+		_, err = r.Seek(int64(56+(manifest.NumItems*28)+item.NameOffset), 0)
 		if err != nil {
 			return manifest, fmt.Errorf("failed to seek to file name: %s", err)
 		}
@@ -143,30 +143,30 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 			namebuf = append(namebuf, b...)
 		}
 
-		dirEntry.FileName = string(namebuf)
+		item.Name = string(namebuf)
 
 		// windows doesn't allow certain characters in file names
 		if runtime.GOOS == "windows" {
-			dirEntry.FileName = sanitize(dirEntry.FileName)
+			item.Name = sanitize(item.Name)
 		}
 
-		manifest.DirEntries = append(manifest.DirEntries, dirEntry)
+		manifest.Items = append(manifest.Items, item)
 	}
 
 	for i := range manifest.NumItems {
-		// manifest.DirEntries[i] SHOULD always exist
-		path := manifest.DirEntries[i].FileName
+		// manifest.Items[i] SHOULD always exist
+		path := manifest.Items[i].Name
 
 		// could probably do some fancy iterator but idk how to do that
-		parent := manifest.DirEntries[i]
+		parent := manifest.Items[i]
 		for parent.ParentIndex != 0xFFFFFFFF {
 			// again, should exist
-			parent = manifest.DirEntries[parent.ParentIndex]
+			parent = manifest.Items[parent.ParentIndex]
 
-			path = parent.FileName + "/" + path
+			path = parent.Name + "/" + path
 		}
 
-		manifest.DirEntries[i].Path = path
+		manifest.Items[i].Path = path
 	}
 
 	return manifest, nil

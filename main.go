@@ -104,12 +104,12 @@ func main() {
 	}
 
 	// create directories
-	for _, e := range manifest.DirEntries {
-		if !e.IsDirectory() {
+	for _, i := range manifest.Items {
+		if !i.IsDirectory() {
 			continue
 		}
 
-		err := os.MkdirAll(fmt.Sprintf("%s/%s", *outdir, e.Path), 0755)
+		err := os.MkdirAll(fmt.Sprintf("%s/%s", *outdir, i.Path), 0755)
 		if err != nil {
 			log.Fatalf("failed to create directory: %s", err)
 		}
@@ -122,22 +122,22 @@ func main() {
 		go extractorWorker(&wg, jobs, data, key)
 	}
 
-	bar := progressbar.Default(int64(len(manifest.DirEntries)), "Extracting")
+	bar := progressbar.Default(int64(len(manifest.Items)), "Extracting")
 
 	// create files
-	for _, e := range manifest.DirEntries {
+	for _, i := range manifest.Items {
 		bar.Add(1)
 
-		if e.IsDirectory() {
+		if i.IsDirectory() {
 			continue
 		}
 
 		jobs <- ExtractorJob{
-			Path:  fmt.Sprintf("%s/%s", *outdir, e.Path),
-			Index: index[int(e.FileID)],
+			Path:  fmt.Sprintf("%s/%s", *outdir, i.Path),
+			Index: index[int(i.ID)],
 		}
 	}
-	
+
 	close(jobs)
 
 	wg.Wait()
