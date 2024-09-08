@@ -50,7 +50,7 @@ func main() {
 	var err error
 
 	// keys
-	var keys map[int][]byte
+	var keys Keys
 
 	wg.Add(1)
 	go func() {
