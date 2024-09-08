@@ -46,7 +46,6 @@ type Manifest struct {
 }
 
 type Item struct {
-	NameOffset  uint32
 	Size        uint32
 	ID          uint32
 	Type        uint32
@@ -113,7 +112,7 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 			return manifest, fmt.Errorf("failed to read value: %s", err)
 		}
 
-		item.NameOffset = v[0]
+		nameOffset := v[0]
 		item.Size = v[1]
 		item.ID = v[2]
 		item.Type = v[3]
@@ -122,7 +121,7 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 		item.FirstIndex = v[6]
 
 		// name offset but no name size? really???
-		_, err = r.Seek(int64(56+(manifest.NumItems*28)+item.NameOffset), 0)
+		_, err = r.Seek(int64(56+(manifest.NumItems*28)+nameOffset), 0)
 		if err != nil {
 			return manifest, fmt.Errorf("failed to seek to file name: %s", err)
 		}
