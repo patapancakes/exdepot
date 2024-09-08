@@ -29,8 +29,8 @@ var sanitize = strings.NewReplacer("\\", "", "/", "", ":", "", "*", "", "\"", ""
 
 type Manifest struct {
 	Dummy1       uint32 // unused
-	StoredAppID  uint32 // unused
-	StoredAppVer uint32 // unused
+	DepotID      uint32 // unused
+	DepotVersion uint32 // unused
 	NumItems     uint32
 	NumFiles     uint32 // unused
 	BlockSize    uint32 // unused
@@ -86,8 +86,8 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 	}
 
 	manifest.Dummy1 = v[0]
-	manifest.StoredAppID = v[1]
-	manifest.StoredAppVer = v[2]
+	manifest.DepotID = v[1]
+	manifest.DepotVersion = v[2]
 	manifest.NumItems = v[3]
 	manifest.NumFiles = v[4]
 	manifest.BlockSize = v[5]
