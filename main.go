@@ -75,6 +75,13 @@ func main() {
 		wg.Done()
 	}()
 
+	if int(manifest.DepotID) != *depot {
+		log.Printf("manifest depot id %d does not match input %d", manifest.DepotID, *depot)
+	}
+	if int(manifest.DepotVersion) != *version {
+		log.Printf("manifest depot version %d does not match input %d", manifest.DepotVersion, *version)
+	}
+
 	// index
 	var index Index
 
