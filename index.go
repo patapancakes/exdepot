@@ -78,10 +78,6 @@ func indexFromReader(r io.Reader) (Index, error) {
 		length := v[1]
 		mode := v[2]
 
-		if length == 0 {
-			continue
-		}
-
 		var chunks []Chunk
 		for i := 0; i < int(length); i += 0x10 {
 			v, err := readUint64List(r, 2)
