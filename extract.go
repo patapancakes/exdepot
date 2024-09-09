@@ -67,6 +67,7 @@ func extractorWorker(wg *sync.WaitGroup, jobs chan ExtractorJob, data io.ReaderA
 
 func extractFile(data io.ReaderAt, out io.Writer, key []byte, index IndexEntry) error {
 	for _, cd := range index.Chunks {
+		// why do zero-length chunks exist?
 		if cd.Length == 0 {
 			continue
 		}
@@ -104,11 +105,6 @@ func extractFile(data io.ReaderAt, out io.Writer, key []byte, index IndexEntry) 
 			if err != nil {
 				return fmt.Errorf("failed to read data: %s", err)
 			}
-
-			// unneeded?
-			//if len(d)%0x10 != 0 {
-			//	d = append(d, make([]byte, len(d)%0x10)...)
-			//}
 
 			c, err := aes.NewCipher(key)
 			if err != nil {
