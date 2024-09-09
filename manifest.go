@@ -28,20 +28,20 @@ import (
 var sanitize = strings.NewReplacer("\\", "", "/", "", ":", "", "*", "", "\"", "", "<", "", ">", "", "|", "").Replace
 
 type Manifest struct {
-	Dummy1       uint32 // unused
-	DepotID      uint32 // unused
-	DepotVersion uint32 // unused
+	Dummy1       uint32
+	DepotID      uint32
+	DepotVersion uint32
 	NumItems     uint32
-	NumFiles     uint32 // unused
-	BlockSize    uint32 // unused
-	DirSize      uint32 // unused
-	DirNameSize  uint32 // unused
-	Info1Count   uint32 // unused
-	CopyCount    uint32 // unused
-	LocalCount   uint32 // unused
-	Dummy2       uint32 // unused
-	Dummy3       uint32 // unused
-	Checksum     uint32 // unused
+	NumFiles     uint32
+	BlockSize    uint32
+	DirSize      uint32
+	DirNameSize  uint32
+	Info1Count   uint32
+	CopyCount    uint32
+	LocalCount   uint32
+	Dummy2       uint32
+	Dummy3       uint32
+	Checksum     uint32
 	Items        []Item
 }
 
