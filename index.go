@@ -18,16 +18,26 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
+)
+
+type Mode int
+
+const (
+	Raw Mode = iota
+	Compressed
+	EncryptedCompressed
+	Encrypted
 )
 
 type Index map[int]IndexEntry
 
 type IndexEntry struct {
 	Chunks []Chunk
-	Mode   uint64
+	Mode   Mode
 }
 
 type Chunk struct {
@@ -57,19 +67,23 @@ func indexFromReader(r io.Reader) (Index, error) {
 	for {
 		v, err := readUint64List(r, 3)
 		if err != nil {
+			if !errors.Is(err, io.EOF) {
+				return index, err
+			}
+
 			break
 		}
 
-		fileID := v[0]
-		indexLen := v[1]
-		fileMode := v[2]
+		id := v[0]
+		length := v[1]
+		mode := v[2]
 
-		if indexLen == 0 {
+		if length == 0 {
 			continue
 		}
 
 		var chunks []Chunk
-		for i := 0; i < int(indexLen); i += 0x10 {
+		for i := 0; i < int(length); i += 0x10 {
 			v, err := readUint64List(r, 2)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read value: %s", err)
@@ -81,9 +95,9 @@ func indexFromReader(r io.Reader) (Index, error) {
 			chunks = append(chunks, Chunk{Start: start, Length: length})
 		}
 
-		index[int(fileID)] = IndexEntry{
+		index[int(id)] = IndexEntry{
 			Chunks: chunks,
-			Mode:   fileMode,
+			Mode:   Mode(mode),
 		}
 	}
 

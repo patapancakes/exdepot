@@ -83,7 +83,7 @@ func extractFile(data io.ReaderAt, out io.Writer, key []byte, index IndexEntry) 
 
 		// zlib buffer sizes if encrypted, not used
 		//var encSize, decSize uint32
-		if index.Mode == 2 {
+		if index.Mode == EncryptedCompressed {
 			_, err := readUint32List(r, 2)
 			if err != nil {
 				return fmt.Errorf("failed to read value: %s", err)
@@ -94,7 +94,7 @@ func extractFile(data io.ReaderAt, out io.Writer, key []byte, index IndexEntry) 
 		}
 
 		// decrypt
-		if index.Mode == 2 || index.Mode == 3 {
+		if index.Mode == EncryptedCompressed || index.Mode == Encrypted {
 			if key == nil {
 				return fmt.Errorf("missing decryption key")
 			}
@@ -117,7 +117,7 @@ func extractFile(data io.ReaderAt, out io.Writer, key []byte, index IndexEntry) 
 
 			cipher.NewCFBDecrypter(c, make([]byte, 0x10)).XORKeyStream(d, d)
 
-			if index.Mode == 3 {
+			if index.Mode == Encrypted {
 				d = d[:cd.Length]
 			}
 
@@ -125,7 +125,7 @@ func extractFile(data io.ReaderAt, out io.Writer, key []byte, index IndexEntry) 
 		}
 
 		// decompress
-		if index.Mode == 1 || index.Mode == 2 {
+		if index.Mode == Compressed || index.Mode == EncryptedCompressed {
 			zr, err := zlib.NewReader(r)
 			if err != nil {
 				return fmt.Errorf("failed to create zlib reader: %s", err)
