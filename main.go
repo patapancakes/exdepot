@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"runtime"
@@ -47,9 +48,12 @@ func main() {
 
 	flag.Parse()
 
-	fmt.Printf("exdepot by Pancakes (patapancakes@pagefault.games)\n")
-	fmt.Printf("https://github.com/patapancakes/exdepot\n")
-	fmt.Printf("Depot %d Version %d\n", *depot, *version)
+	// "interactive" mode
+	if *extract || *outpath != "" {
+		fmt.Printf("exdepot by Pancakes (patapancakes@pagefault.games)\n")
+		fmt.Printf("https://github.com/patapancakes/exdepot\n")
+		fmt.Printf("Depot %d Version %d\n", *depot, *version)
+	}
 
 	// async related
 	var wg sync.WaitGroup
@@ -98,40 +102,24 @@ func main() {
 	wg.Wait()
 
 	if int(manifest.DepotID) != *depot {
-		log.Printf("manifest depot id %d does not match input %d", manifest.DepotID, *depot)
+		log.Fatalf("manifest depot id %d does not match input %d", manifest.DepotID, *depot)
 	}
 	if int(manifest.DepotVersion) != *version {
-		log.Printf("manifest depot version %d does not match input %d", manifest.DepotVersion, *version)
+		log.Fatalf("manifest depot version %d does not match input %d", manifest.DepotVersion, *version)
 	}
 
 	switch {
 	default:
 		fallthrough
 	case *extract:
-		if *outpath == "" {
-			*outpath = fmt.Sprintf("%d_%d", manifest.DepotID, manifest.DepotVersion)
-		}
-
 		err = doExtract(*storagedir, *outpath, *workers, keys, manifest, index)
 	case *validate:
 		err = fmt.Errorf("not implemented yet")
 	case *filelist:
-		if *outpath == "" {
-			*outpath = fmt.Sprintf("filelist_%d_%d.txt", manifest.DepotID, manifest.DepotVersion)
-		}
-
 		err = doFileList(manifest, *outpath)
 	case *manifestjson:
-		if *outpath == "" {
-			*outpath = fmt.Sprintf("manifest_%d_%d.json", manifest.DepotID, manifest.DepotVersion)
-		}
-
 		err = doManifestJSON(manifest, *outpath)
 	case *indexjson:
-		if *outpath == "" {
-			*outpath = fmt.Sprintf("index_%d_%d.json", manifest.DepotID, manifest.DepotVersion)
-		}
-
 		err = doIndexJSON(index, *outpath)
 	}
 	if err != nil {
@@ -141,6 +129,10 @@ func main() {
 
 func doExtract(storagedir string, outpath string, workers int, keys Keys, manifest Manifest, index Index) error {
 	fmt.Printf("Using %d extraction workers\n", workers)
+
+	if outpath == "" {
+		outpath = fmt.Sprintf("%d_%d", manifest.DepotID, manifest.DepotVersion)
+	}
 
 	// extract
 	data, err := os.Open(fmt.Sprintf("%s/%d.data", storagedir, manifest.DepotID))
@@ -200,9 +192,15 @@ func doExtract(storagedir string, outpath string, workers int, keys Keys, manife
 }
 
 func doFileList(manifest Manifest, outpath string) error {
-	f, err := os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to open output file: %s", err)
+	var w io.Writer
+	if outpath == "" {
+		w = os.Stdout
+	} else {
+		var err error
+		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to open output file: %s", err)
+		}
 	}
 
 	for _, i := range manifest.Items {
@@ -210,7 +208,7 @@ func doFileList(manifest Manifest, outpath string) error {
 			continue
 		}
 
-		_, err = f.Write([]byte(i.Path + "\n"))
+		_, err := w.Write([]byte(i.Path + "\n"))
 		if err != nil {
 			return fmt.Errorf("failed to write to output file: %s", err)
 		}
@@ -220,12 +218,18 @@ func doFileList(manifest Manifest, outpath string) error {
 }
 
 func doManifestJSON(manifest Manifest, outpath string) error {
-	f, err := os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to open output file: %s", err)
+	var w io.Writer
+	if outpath == "" {
+		w = os.Stdout
+	} else {
+		var err error
+		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to open output file: %s", err)
+		}
 	}
 
-	err = json.NewEncoder(f).Encode(manifest)
+	err := json.NewEncoder(w).Encode(manifest)
 	if err != nil {
 		return fmt.Errorf("failed to encode output json: %s", err)
 	}
@@ -234,12 +238,18 @@ func doManifestJSON(manifest Manifest, outpath string) error {
 }
 
 func doIndexJSON(index Index, outpath string) error {
-	f, err := os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to open output file: %s", err)
+	var w io.Writer
+	if outpath == "" {
+		w = os.Stdout
+	} else {
+		var err error
+		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to open output file: %s", err)
+		}
 	}
 
-	err = json.NewEncoder(f).Encode(index)
+	err := json.NewEncoder(w).Encode(index)
 	if err != nil {
 		return fmt.Errorf("failed to encode output json: %s", err)
 	}
