@@ -108,14 +108,30 @@ func main() {
 	default:
 		fallthrough
 	case *extract:
-		err = doExtract(*storagedir, *outpath, *depot, *workers, keys, manifest, index)
+		if *outpath == "" {
+			*outpath = fmt.Sprintf("%d_%d", manifest.DepotID, manifest.DepotVersion)
+		}
+
+		err = doExtract(*storagedir, *outpath, *workers, keys, manifest, index)
 	case *validate:
 		err = fmt.Errorf("not implemented yet")
 	case *filelist:
+		if *outpath == "" {
+			*outpath = fmt.Sprintf("filelist_%d_%d.txt", manifest.DepotID, manifest.DepotVersion)
+		}
+
 		err = doFileList(manifest, *outpath)
 	case *manifestjson:
+		if *outpath == "" {
+			*outpath = fmt.Sprintf("manifest_%d_%d.json", manifest.DepotID, manifest.DepotVersion)
+		}
+
 		err = doManifestJSON(manifest, *outpath)
 	case *indexjson:
+		if *outpath == "" {
+			*outpath = fmt.Sprintf("index_%d_%d.json", manifest.DepotID, manifest.DepotVersion)
+		}
+
 		err = doIndexJSON(index, *outpath)
 	}
 	if err != nil {
@@ -123,22 +139,18 @@ func main() {
 	}
 }
 
-func doExtract(storagedir string, outpath string, depot int, workers int, keys Keys, manifest Manifest, index Index) error {
-	if outpath == "" {
-		outpath = "extracted"
-	}
-
+func doExtract(storagedir string, outpath string, workers int, keys Keys, manifest Manifest, index Index) error {
 	fmt.Printf("Using %d extraction workers\n", workers)
 
 	// extract
-	data, err := os.Open(fmt.Sprintf("%s/%d.data", storagedir, depot))
+	data, err := os.Open(fmt.Sprintf("%s/%d.data", storagedir, manifest.DepotID))
 	if err != nil {
 		return fmt.Errorf("failed to open data file: %s", err)
 	}
 
 	defer data.Close()
 
-	key, ok := keys[depot]
+	key, ok := keys[int(manifest.InfoCount)]
 	if !ok {
 		log.Print("couldn't find key for depot")
 	}
@@ -188,10 +200,6 @@ func doExtract(storagedir string, outpath string, depot int, workers int, keys K
 }
 
 func doFileList(manifest Manifest, outpath string) error {
-	if outpath == "" {
-		outpath = "filelist.txt"
-	}
-
 	f, err := os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open output file: %s", err)
@@ -212,10 +220,6 @@ func doFileList(manifest Manifest, outpath string) error {
 }
 
 func doManifestJSON(manifest Manifest, outpath string) error {
-	if outpath == "" {
-		outpath = "manifest.json"
-	}
-
 	f, err := os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open output file: %s", err)
@@ -230,10 +234,6 @@ func doManifestJSON(manifest Manifest, outpath string) error {
 }
 
 func doIndexJSON(index Index, outpath string) error {
-	if outpath == "" {
-		outpath = "index.json"
-	}
-
 	f, err := os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open output file: %s", err)
