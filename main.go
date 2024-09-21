@@ -75,13 +75,6 @@ func main() {
 		wg.Done()
 	}()
 
-	if int(manifest.DepotID) != *depot {
-		log.Printf("manifest depot id %d does not match input %d", manifest.DepotID, *depot)
-	}
-	if int(manifest.DepotVersion) != *version {
-		log.Printf("manifest depot version %d does not match input %d", manifest.DepotVersion, *version)
-	}
-
 	// index
 	var index Index
 
@@ -96,6 +89,13 @@ func main() {
 	}()
 
 	wg.Wait()
+
+	if int(manifest.DepotID) != *depot {
+		log.Printf("manifest depot id %d does not match input %d", manifest.DepotID, *depot)
+	}
+	if int(manifest.DepotVersion) != *version {
+		log.Printf("manifest depot version %d does not match input %d", manifest.DepotVersion, *version)
+	}
 
 	// extract
 	data, err := os.Open(fmt.Sprintf("%s/%d.data", *storagedir, *depot))
@@ -138,6 +138,8 @@ func main() {
 		if i.IsDirectory() {
 			continue
 		}
+
+		bar.Describe(i.Path)
 
 		jobs <- ExtractorJob{
 			Path:  fmt.Sprintf("%s/%s", *outdir, i.Path),
