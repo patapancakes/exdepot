@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"runtime"
@@ -192,10 +191,8 @@ func doExtract(storagedir string, outpath string, workers int, keys Keys, manife
 }
 
 func doFileList(manifest Manifest, outpath string) error {
-	var w io.Writer
-	if outpath == "" {
-		w = os.Stdout
-	} else {
+	w := os.Stdout
+	if outpath != "" {
 		var err error
 		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 		if err != nil {
@@ -218,10 +215,8 @@ func doFileList(manifest Manifest, outpath string) error {
 }
 
 func doManifestJSON(manifest Manifest, outpath string) error {
-	var w io.Writer
-	if outpath == "" {
-		w = os.Stdout
-	} else {
+	w := os.Stdout
+	if outpath != "" {
 		var err error
 		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 		if err != nil {
@@ -238,10 +233,8 @@ func doManifestJSON(manifest Manifest, outpath string) error {
 }
 
 func doIndexJSON(index Index, outpath string) error {
-	var w io.Writer
-	if outpath == "" {
-		w = os.Stdout
-	} else {
+	w := os.Stdout
+	if outpath != "" {
 		var err error
 		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 		if err != nil {
