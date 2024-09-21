@@ -26,6 +26,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/patapancakes/exdepot/gozelle"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -60,11 +61,11 @@ func main() {
 	var err error
 
 	// keys
-	var keys Keys
+	var keys gozelle.Keys
 
 	wg.Add(1)
 	go func() {
-		keys, err = readKeys(*keyfile)
+		keys, err = gozelle.KeysFromFile(*keyfile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -73,11 +74,11 @@ func main() {
 	}()
 
 	// manifest
-	var manifest Manifest
+	var manifest gozelle.Manifest
 
 	wg.Add(1)
 	go func() {
-		manifest, err = readManifest(*manifestdir, *depot, *version)
+		manifest, err = gozelle.ManifestFromFile(*manifestdir, *depot, *version)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -86,11 +87,11 @@ func main() {
 	}()
 
 	// index
-	var index Index
+	var index gozelle.Index
 
 	wg.Add(1)
 	go func() {
-		index, err = readIndex(*storagedir, *depot)
+		index, err = gozelle.IndexFromFile(*storagedir, *depot)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -126,7 +127,7 @@ func main() {
 	}
 }
 
-func doExtract(storagedir string, outpath string, workers int, keys Keys, manifest Manifest, index Index) error {
+func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys, manifest gozelle.Manifest, index gozelle.Index) error {
 	fmt.Printf("Using %d extraction workers\n", workers)
 
 	if outpath == "" {
@@ -141,7 +142,7 @@ func doExtract(storagedir string, outpath string, workers int, keys Keys, manife
 
 	defer data.Close()
 
-	key, ok := keys[int(manifest.InfoCount)]
+	key, ok := keys[int(manifest.DepotID)]
 	if !ok {
 		log.Print("couldn't find key for depot")
 	}
@@ -179,7 +180,7 @@ func doExtract(storagedir string, outpath string, workers int, keys Keys, manife
 
 		jobs <- ExtractorJob{
 			Path:  fmt.Sprintf("%s/%s", outpath, i.Path),
-			Index: index[int(i.ID)],
+			Entry: index[int(i.ID)],
 		}
 	}
 
@@ -190,7 +191,7 @@ func doExtract(storagedir string, outpath string, workers int, keys Keys, manife
 	return nil
 }
 
-func doFileList(manifest Manifest, outpath string) error {
+func doFileList(manifest gozelle.Manifest, outpath string) error {
 	w := os.Stdout
 	if outpath != "" {
 		var err error
@@ -214,7 +215,7 @@ func doFileList(manifest Manifest, outpath string) error {
 	return nil
 }
 
-func doManifestJSON(manifest Manifest, outpath string) error {
+func doManifestJSON(manifest gozelle.Manifest, outpath string) error {
 	w := os.Stdout
 	if outpath != "" {
 		var err error
@@ -232,7 +233,7 @@ func doManifestJSON(manifest Manifest, outpath string) error {
 	return nil
 }
 
-func doIndexJSON(index Index, outpath string) error {
+func doIndexJSON(index gozelle.Index, outpath string) error {
 	w := os.Stdout
 	if outpath != "" {
 		var err error

@@ -15,7 +15,7 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package main
+package gozelle
 
 import (
 	"encoding/hex"
@@ -32,7 +32,7 @@ type KeyFile struct {
 	Keys map[string]string `json:"keys"`
 }
 
-func readKeys(path string) (Keys, error) {
+func KeysFromFile(path string) (Keys, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open keys file: %s", err)

@@ -15,7 +15,7 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package main
+package gozelle
 
 import (
 	"fmt"
@@ -60,7 +60,7 @@ func (i Item) IsDirectory() bool {
 	return i.Type&0x4000 == 0
 }
 
-func readManifest(manifestdir string, depot int, version int) (Manifest, error) {
+func ManifestFromFile(manifestdir string, depot int, version int) (Manifest, error) {
 	file, err := os.Open(fmt.Sprintf("%s/%d_%d.manifest", manifestdir, depot, version))
 	if err != nil {
 		return Manifest{}, fmt.Errorf("failed to open manifest file: %s", err)

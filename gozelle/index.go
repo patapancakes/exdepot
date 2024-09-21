@@ -15,9 +15,13 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package main
+package gozelle
 
 import (
+	"bytes"
+	"compress/zlib"
+	"crypto/aes"
+	"crypto/cipher"
 	"errors"
 	"fmt"
 	"io"
@@ -41,11 +45,11 @@ type IndexEntry struct {
 }
 
 type Chunk struct {
-	Start  uint64 `json:"start"`
+	Offset uint64 `json:"offset"`
 	Length uint64 `json:"length"`
 }
 
-func readIndex(storagedir string, depot int) (Index, error) {
+func IndexFromFile(storagedir string, depot int) (Index, error) {
 	file, err := os.Open(fmt.Sprintf("%s/%d.index", storagedir, depot))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open index file: %s", err)
@@ -88,7 +92,7 @@ func indexFromReader(r io.Reader) (Index, error) {
 			start := v[0]
 			length := v[1]
 
-			chunks = append(chunks, Chunk{Start: start, Length: length})
+			chunks = append(chunks, Chunk{Offset: start, Length: length})
 		}
 
 		index[int(id)] = IndexEntry{
@@ -98,4 +102,80 @@ func indexFromReader(r io.Reader) (Index, error) {
 	}
 
 	return index, nil
+}
+
+func (e IndexEntry) WriteInto(key []byte, src io.ReaderAt, dst io.Writer) error {
+	for _, cd := range e.Chunks {
+		// why do zero-length chunks exist?
+		if cd.Length == 0 {
+			continue
+		}
+
+		chunk := make([]byte, cd.Length)
+		_, err := src.ReadAt(chunk, int64(cd.Offset))
+		if err != nil {
+			return fmt.Errorf("failed to read data: %s", err)
+		}
+
+		var r io.Reader
+
+		r = bytes.NewReader(chunk)
+
+		// zlib buffer sizes if encrypted, not used
+		//var encSize, decSize uint32
+		if e.Mode == EncryptedCompressed {
+			_, err := readUint32List(r, 2)
+			if err != nil {
+				return fmt.Errorf("failed to read value: %s", err)
+			}
+
+			//encSize = v[0] // unused
+			//decSize = v[1] // unused
+		}
+
+		// decrypt
+		if e.Mode == EncryptedCompressed || e.Mode == Encrypted {
+			if key == nil {
+				return fmt.Errorf("missing decryption key")
+			}
+
+			d := make([]byte, cd.Length)
+			_, err = r.Read(d)
+			if err != nil {
+				return fmt.Errorf("failed to read data: %s", err)
+			}
+
+			c, err := aes.NewCipher(key)
+			if err != nil {
+				return fmt.Errorf("failed to create aes cipher: %s", err)
+			}
+
+			cipher.NewCFBDecrypter(c, make([]byte, 0x10)).XORKeyStream(d, d)
+
+			if e.Mode == Encrypted {
+				d = d[:cd.Length]
+			}
+
+			r = bytes.NewReader(d)
+		}
+
+		// decompress
+		if e.Mode == Compressed || e.Mode == EncryptedCompressed {
+			zr, err := zlib.NewReader(r)
+			if err != nil {
+				return fmt.Errorf("failed to create zlib reader: %s", err)
+			}
+
+			defer zr.Close()
+
+			r = zr
+		}
+
+		_, err = io.Copy(dst, r)
+		if err != nil {
+			return fmt.Errorf("failed to write data to output file: %s", err)
+		}
+	}
+
+	return nil
 }
