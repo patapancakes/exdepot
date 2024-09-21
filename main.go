@@ -18,6 +18,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -32,17 +33,23 @@ func main() {
 	keyfile := flag.String("keyfile", "depotkeys.json", "path to depot keys file")
 	manifestdir := flag.String("manifestdir", "manifests", "path to manifests directory")
 	storagedir := flag.String("storagedir", "storages", "path to storages directory")
-	outdir := flag.String("outdir", "extracted", "path to output directory")
+	outpath := flag.String("outpath", "", "path to output directory or file")
 	depot := flag.Int("depot", 0, "depot id to extract")
 	version := flag.Int("version", 0, "depot version to extract")
 	workers := flag.Int("workers", runtime.NumCPU(), "number of extraction workers")
+
+	// mode
+	extract := flag.Bool("extract", false, "extract storage")
+	validate := flag.Bool("validate", false, "validate storage")
+	filelist := flag.Bool("filelist", false, "create file list")
+	manifestjson := flag.Bool("manifestjson", false, "create manifest json")
+	indexjson := flag.Bool("indexjson", false, "create index json")
 
 	flag.Parse()
 
 	fmt.Printf("exdepot by Pancakes (patapancakes@pagefault.games)\n")
 	fmt.Printf("https://github.com/patapancakes/exdepot\n")
 	fmt.Printf("Depot %d Version %d\n", *depot, *version)
-	fmt.Printf("Using %d extraction workers\n", *workers)
 
 	// async related
 	var wg sync.WaitGroup
@@ -97,15 +104,41 @@ func main() {
 		log.Printf("manifest depot version %d does not match input %d", manifest.DepotVersion, *version)
 	}
 
-	// extract
-	data, err := os.Open(fmt.Sprintf("%s/%d.data", *storagedir, *depot))
+	switch {
+	default:
+		fallthrough
+	case *extract:
+		err = doExtract(*storagedir, *outpath, *depot, *workers, keys, manifest, index)
+	case *validate:
+		err = fmt.Errorf("not implemented yet")
+	case *filelist:
+		err = doFileList(manifest, *outpath)
+	case *manifestjson:
+		err = doManifestJSON(manifest, *outpath)
+	case *indexjson:
+		err = doIndexJSON(index, *outpath)
+	}
 	if err != nil {
-		log.Fatalf("failed to open data file: %s", err)
+		log.Fatal(err)
+	}
+}
+
+func doExtract(storagedir string, outpath string, depot int, workers int, keys Keys, manifest Manifest, index Index) error {
+	if outpath == "" {
+		outpath = "extracted"
+	}
+
+	fmt.Printf("Using %d extraction workers\n", workers)
+
+	// extract
+	data, err := os.Open(fmt.Sprintf("%s/%d.data", storagedir, depot))
+	if err != nil {
+		return fmt.Errorf("failed to open data file: %s", err)
 	}
 
 	defer data.Close()
 
-	key, ok := keys[*depot]
+	key, ok := keys[depot]
 	if !ok {
 		log.Print("couldn't find key for depot")
 	}
@@ -116,15 +149,17 @@ func main() {
 			continue
 		}
 
-		err := os.MkdirAll(fmt.Sprintf("%s/%s", *outdir, i.Path), 0755)
+		err := os.MkdirAll(fmt.Sprintf("%s/%s", outpath, i.Path), 0755)
 		if err != nil {
-			log.Fatalf("failed to create directory: %s", err)
+			return fmt.Errorf("failed to create directory: %s", err)
 		}
 	}
 
 	jobs := make(chan ExtractorJob)
 
-	for range *workers {
+	var wg sync.WaitGroup
+
+	for range workers {
 		wg.Add(1)
 		go extractorWorker(&wg, jobs, data, key)
 	}
@@ -140,7 +175,7 @@ func main() {
 		}
 
 		jobs <- ExtractorJob{
-			Path:  fmt.Sprintf("%s/%s", *outdir, i.Path),
+			Path:  fmt.Sprintf("%s/%s", outpath, i.Path),
 			Index: index[int(i.ID)],
 		}
 	}
@@ -148,4 +183,66 @@ func main() {
 	close(jobs)
 
 	wg.Wait()
+
+	return nil
+}
+
+func doFileList(manifest Manifest, outpath string) error {
+	if outpath == "" {
+		outpath = "filelist.txt"
+	}
+
+	f, err := os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open output file: %s", err)
+	}
+
+	for _, i := range manifest.Items {
+		if i.Path == "" {
+			continue
+		}
+
+		_, err = f.Write([]byte(i.Path + "\n"))
+		if err != nil {
+			return fmt.Errorf("failed to write to output file: %s", err)
+		}
+	}
+
+	return nil
+}
+
+func doManifestJSON(manifest Manifest, outpath string) error {
+	if outpath == "" {
+		outpath = "manifest.json"
+	}
+
+	f, err := os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open output file: %s", err)
+	}
+
+	err = json.NewEncoder(f).Encode(manifest)
+	if err != nil {
+		return fmt.Errorf("failed to encode output json: %s", err)
+	}
+
+	return nil
+}
+
+func doIndexJSON(index Index, outpath string) error {
+	if outpath == "" {
+		outpath = "index.json"
+	}
+
+	f, err := os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open output file: %s", err)
+	}
+
+	err = json.NewEncoder(f).Encode(index)
+	if err != nil {
+		return fmt.Errorf("failed to encode output json: %s", err)
+	}
+
+	return nil
 }

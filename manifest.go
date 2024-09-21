@@ -28,32 +28,32 @@ import (
 var sanitize = strings.NewReplacer("\\", "", "/", "", ":", "", "*", "", "\"", "", "<", "", ">", "", "|", "").Replace
 
 type Manifest struct {
-	Dummy1       uint32
-	DepotID      uint32
-	DepotVersion uint32
-	NumItems     uint32
-	NumFiles     uint32
-	BlockSize    uint32
-	DirSize      uint32
-	DirNameSize  uint32
-	Info1Count   uint32
-	CopyCount    uint32
-	LocalCount   uint32
-	Dummy2       uint32
-	Dummy3       uint32
-	Checksum     uint32
-	Items        []Item
+	Dummy1       uint32 `json:"dummy1"`
+	DepotID      uint32 `json:"depotID"`
+	DepotVersion uint32 `json:"depotVersion"`
+	NumItems     uint32 `json:"numItems"`
+	NumFiles     uint32 `json:"numFiles"`
+	BlockSize    uint32 `json:"blockSize"`
+	DirSize      uint32 `json:"dirSize"`
+	DirNameSize  uint32 `json:"dirNameSize"`
+	InfoCount    uint32 `json:"infoCount"`
+	CopyCount    uint32 `json:"copyCount"`
+	LocalCount   uint32 `json:"localCount"`
+	Dummy2       uint32 `json:"dummy2"`
+	Dummy3       uint32 `json:"dummy3"`
+	Checksum     uint32 `json:"checksum"`
+	Items        []Item `json:"items"`
 }
 
 type Item struct {
-	Size        uint32
-	ID          uint32
-	Type        uint32
-	ParentIndex uint32
-	NextIndex   uint32
-	FirstIndex  uint32
-	Name        string
-	Path        string // not in file
+	Size        uint32 `json:"size"`
+	ID          uint32 `json:"id"`
+	Type        uint32 `json:"type"`
+	ParentIndex uint32 `json:"parentIndex"`
+	NextIndex   uint32 `json:"nextIndex"`
+	FirstIndex  uint32 `json:"firstIndex"`
+	Name        string `json:"name"`
+	Path        string `json:"path"`
 }
 
 func (i Item) IsDirectory() bool {
@@ -92,7 +92,7 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 	manifest.BlockSize = v[5]
 	manifest.DirSize = v[6]
 	manifest.DirNameSize = v[7]
-	manifest.Info1Count = v[8]
+	manifest.InfoCount = v[8]
 	manifest.CopyCount = v[9]
 	manifest.LocalCount = v[10]
 	manifest.Dummy2 = v[11]

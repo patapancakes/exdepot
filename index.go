@@ -36,13 +36,13 @@ const (
 type Index map[int]IndexEntry
 
 type IndexEntry struct {
-	Chunks []Chunk
-	Mode   Mode
+	Chunks []Chunk `json:"chunks"`
+	Mode   Mode    `json:"mode"`
 }
 
 type Chunk struct {
-	Start  uint64
-	Length uint64
+	Start  uint64 `json:"start"`
+	Length uint64 `json:"length"`
 }
 
 func readIndex(storagedir string, depot int) (Index, error) {
