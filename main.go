@@ -139,8 +139,6 @@ func main() {
 			continue
 		}
 
-		bar.Describe(i.Path)
-
 		jobs <- ExtractorJob{
 			Path:  fmt.Sprintf("%s/%s", *outdir, i.Path),
 			Index: index[int(i.ID)],
