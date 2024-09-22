@@ -27,8 +27,8 @@ import (
 )
 
 type ExtractorJob struct {
-	Path  string
-	Entry gozelle.IndexEntry
+	Path string
+	File *gozelle.File
 }
 
 func extractorWorker(wg *sync.WaitGroup, jobs chan ExtractorJob, data io.ReaderAt, key []byte) {
@@ -45,7 +45,12 @@ func extractorWorker(wg *sync.WaitGroup, jobs chan ExtractorJob, data io.ReaderA
 			log.Fatalf("failed to open output file: %s", err)
 		}
 
-		err = job.Entry.WriteInto(key, data, out)
+		err = job.File.Prepare(key, data)
+		if err != nil {
+			log.Fatalf("failed to prepare file for reading: %s", err)
+		}
+
+		_, err = io.Copy(out, job.File)
 		if err != nil {
 			log.Fatalf("failed to extract cache file: %s", err)
 		}

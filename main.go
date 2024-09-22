@@ -179,8 +179,8 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 		}
 
 		jobs <- ExtractorJob{
-			Path:  fmt.Sprintf("%s/%s", outpath, i.Path),
-			Entry: index[int(i.ID)],
+			Path: fmt.Sprintf("%s/%s", outpath, i.Path),
+			File: index[int(i.ID)],
 		}
 	}
 
