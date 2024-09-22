@@ -38,18 +38,12 @@ func main() {
 	depot := flag.Int("depot", 0, "depot id to extract")
 	version := flag.Int("version", 0, "depot version to extract")
 	workers := flag.Int("workers", runtime.NumCPU(), "number of extraction workers")
-
-	// mode
-	extract := flag.Bool("extract", false, "extract storage")
-	validate := flag.Bool("validate", false, "validate storage")
-	filelist := flag.Bool("filelist", false, "create file list")
-	manifestjson := flag.Bool("manifestjson", false, "create manifest json")
-	indexjson := flag.Bool("indexjson", false, "create index json")
+	mode := flag.String("mode", "extract", "mode to use (extract, validate, filelist, manifestjson, indexjson)")
 
 	flag.Parse()
 
 	// "interactive" mode
-	if *extract || *outpath != "" {
+	if *mode == "extract" || *outpath != "" {
 		fmt.Printf("exdepot by Pancakes (patapancakes@pagefault.games)\n")
 		fmt.Printf("https://github.com/patapancakes/exdepot\n")
 		fmt.Printf("Depot %d Version %d\n", *depot, *version)
@@ -108,19 +102,19 @@ func main() {
 		log.Fatalf("manifest depot version %d does not match input %d", manifest.DepotVersion, *version)
 	}
 
-	switch {
-	default:
-		fallthrough
-	case *extract:
+	switch *mode {
+	case "extract":
 		err = doExtract(*storagedir, *outpath, *workers, keys, manifest, index)
-	case *validate:
+	case "validate":
 		err = fmt.Errorf("not implemented yet")
-	case *filelist:
+	case "filelist":
 		err = doFileList(manifest, *outpath)
-	case *manifestjson:
+	case "manifestjson":
 		err = doManifestJSON(manifest, *outpath)
-	case *indexjson:
+	case "indexjson":
 		err = doIndexJSON(index, *outpath)
+	default:
+		err = fmt.Errorf("unknown mode %s", *mode)
 	}
 	if err != nil {
 		log.Fatal(err)
