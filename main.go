@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"runtime"
 	"sync"
 
@@ -129,7 +130,7 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 	}
 
 	// extract
-	data, err := os.Open(fmt.Sprintf("%s/%d.data", storagedir, manifest.DepotID))
+	data, err := os.Open(path.Join(storagedir, fmt.Sprintf("%d.data", manifest.DepotID)))
 	if err != nil {
 		return fmt.Errorf("failed to open data file: %s", err)
 	}
@@ -147,7 +148,7 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 			continue
 		}
 
-		err := os.MkdirAll(fmt.Sprintf("%s/%s", outpath, i.Path), 0755)
+		err := os.MkdirAll(path.Join(outpath, i.Path), 0755)
 		if err != nil {
 			return fmt.Errorf("failed to create directory: %s", err)
 		}
@@ -173,7 +174,7 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 		}
 
 		jobs <- ExtractorJob{
-			Path: fmt.Sprintf("%s/%s", outpath, i.Path),
+			Path: path.Join(outpath, i.Path),
 			File: index[int(i.ID)],
 		}
 	}

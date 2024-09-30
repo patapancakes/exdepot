@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 )
 
 type Mode int
@@ -36,7 +37,7 @@ const (
 type Index map[int]*File
 
 func IndexFromFile(storagedir string, depot int) (Index, error) {
-	file, err := os.Open(fmt.Sprintf("%s/%d.index", storagedir, depot))
+	file, err := os.Open(path.Join(storagedir, fmt.Sprintf("%d.index", depot)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open index file: %s", err)
 	}

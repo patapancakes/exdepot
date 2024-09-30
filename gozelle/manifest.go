@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"runtime"
+	"slices"
 	"strings"
 )
 
@@ -61,7 +63,7 @@ func (i Item) IsDirectory() bool {
 }
 
 func ManifestFromFile(manifestdir string, depot int, version int) (Manifest, error) {
-	file, err := os.Open(fmt.Sprintf("%s/%d_%d.manifest", manifestdir, depot, version))
+	file, err := os.Open(path.Join(manifestdir, fmt.Sprintf("%d_%d.manifest", depot, version)))
 	if err != nil {
 		return Manifest{}, fmt.Errorf("failed to open manifest file: %s", err)
 	}
@@ -153,19 +155,15 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 	}
 
 	for i := range manifest.NumItems {
-		// manifest.Items[i] SHOULD always exist
-		path := manifest.Items[i].Name
+		var hierarchy []string
 
-		// could probably do some fancy iterator but idk how to do that
-		parent := manifest.Items[i]
-		for parent.ParentIndex != 0xFFFFFFFF {
-			// again, should exist
-			parent = manifest.Items[parent.ParentIndex]
-
-			path = parent.Name + "/" + path
+		for item := manifest.Items[i]; item.ParentIndex != 0xFFFFFFFF; item = manifest.Items[item.ParentIndex] {
+			hierarchy = append(hierarchy, item.Name)
 		}
 
-		manifest.Items[i].Path = path
+		slices.Reverse(hierarchy)
+
+		manifest.Items[i].Path = path.Join(hierarchy...)
 	}
 
 	return manifest, nil
