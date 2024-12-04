@@ -85,30 +85,12 @@ func (c *Chunk) Prepare(key []byte, src io.ReaderAt, mode Mode) error {
 			return fmt.Errorf("missing decryption key")
 		}
 
-		data := make([]byte, c.Length)
-		_, err = c.data.Read(data)
-		if err != nil {
-			return fmt.Errorf("failed to read data: %s", err)
-		}
-
-		// doesn't seem like this is needed
-		//if len(data)%0x10 != 0 {
-		//	data = append(data, make([]byte, len(data)%0x10)...)
-		//}
-
-		ci, err := aes.NewCipher(key)
+		block, err := aes.NewCipher(key)
 		if err != nil {
 			return fmt.Errorf("failed to create aes cipher: %s", err)
 		}
 
-		cipher.NewCFBDecrypter(ci, make([]byte, 0x10)).XORKeyStream(data, data)
-
-		// doesn't seem like this is needed either
-		//if mode == Encrypted {
-		//	data = data[:c.Length]
-		//}
-
-		c.data = bytes.NewReader(data)
+		c.data = &cipher.StreamReader{S: cipher.NewCFBDecrypter(block, make([]byte, 0x10)), R: c.data}
 	}
 
 	// decompress
