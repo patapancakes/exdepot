@@ -35,6 +35,17 @@ func (f *File) Read(dst []byte) (int, error) {
 	return io.MultiReader(readers...).Read(dst)
 }
 
+func (f *File) Close() error {
+	for _, c := range f.Chunks {
+		err := c.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (f *File) Prepare(key []byte, src io.ReaderAt) error {
 	for i := range f.Chunks {
 		err := f.Chunks[i].Prepare(key, src, f.Mode)

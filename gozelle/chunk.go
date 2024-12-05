@@ -31,7 +31,8 @@ type Chunk struct {
 	Offset uint64 `json:"offset"`
 	Length uint64 `json:"length"`
 
-	data io.Reader
+	data   io.Reader
+	closer io.Closer
 }
 
 var ErrChunkNotPrepared = errors.New("chunk not prepared")
@@ -51,6 +52,16 @@ func (c Chunk) Read(dst []byte) (int, error) {
 	}
 
 	return n, nil
+}
+
+func (c Chunk) Close() error {
+	if c.closer == nil {
+		return nil
+	}
+
+	c.closer.Close()
+
+	return nil
 }
 
 func (c *Chunk) Prepare(key []byte, src io.ReaderAt, mode Mode) error {
@@ -100,9 +111,7 @@ func (c *Chunk) Prepare(key []byte, src io.ReaderAt, mode Mode) error {
 			return fmt.Errorf("failed to create zlib reader: %s", err)
 		}
 
-		// don't close since we're storing it for later
-		//defer zr.Close()
-
+		c.closer = zr
 		c.data = zr
 	}
 

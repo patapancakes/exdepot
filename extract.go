@@ -55,6 +55,11 @@ func extractorWorker(wg *sync.WaitGroup, jobs chan ExtractorJob, data io.ReaderA
 			log.Fatalf("failed to extract cache file: %s", err)
 		}
 
+		err = job.File.Close()
+		if err != nil {
+			log.Fatalf("failed to close cache file: %s", err)
+		}
+
 		err = out.Sync()
 		if err != nil {
 			log.Fatalf("failed to sync output file: %s", err)
