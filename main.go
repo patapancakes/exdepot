@@ -19,6 +19,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -137,26 +138,10 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 
 	defer data.Close()
 
-	key, ok := keys[int(manifest.DepotID)]
-	if !ok {
-		log.Print("couldn't find key for depot")
-	}
-
-	// create directories
-	for _, i := range manifest.Items {
-		if !i.IsDirectory() {
-			continue
-		}
-
-		err := os.MkdirAll(path.Join(outpath, i.Path), 0755)
-		if err != nil {
-			return fmt.Errorf("failed to create directory: %s", err)
-		}
-	}
-
+	var wg sync.WaitGroup
 	jobs := make(chan ExtractorJob)
 
-	var wg sync.WaitGroup
+	key := keys[int(manifest.DepotID)]
 
 	for range workers {
 		wg.Add(1)
@@ -165,11 +150,16 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 
 	bar := progressbar.Default(int64(len(manifest.Items)), "Extracting")
 
-	// create files
+	// create directories and files
 	for _, i := range manifest.Items {
 		bar.Add(1)
 
 		if i.IsDirectory() {
+			err := os.Mkdir(path.Join(outpath, i.Path), 0755)
+			if err != nil && !errors.Is(err, os.ErrExist) {
+				return fmt.Errorf("failed to create directory: %s", err)
+			}
+
 			continue
 		}
 
@@ -180,7 +170,6 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 	}
 
 	close(jobs)
-
 	wg.Wait()
 
 	return nil
