@@ -1,6 +1,6 @@
 module github.com/patapancakes/exdepot
 
-go 1.23.0
+go 1.23.4
 
 require github.com/schollz/progressbar/v3 v3.14.6
 
