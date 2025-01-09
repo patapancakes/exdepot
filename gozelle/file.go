@@ -43,6 +43,9 @@ func (f *File) Close() error {
 		}
 	}
 
+	// HACK: makes it not leak a ton of memory
+	f.Chunks = nil
+
 	return nil
 }
 
