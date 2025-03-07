@@ -165,7 +165,7 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 
 		jobs <- ExtractorJob{
 			Path: path.Join(outpath, i.Path),
-			File: index[int(i.ID)],
+			File: index[uint64(i.ID)],
 		}
 	}
 

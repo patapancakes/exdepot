@@ -34,7 +34,7 @@ const (
 	Encrypted
 )
 
-type Index map[int]*File
+type Index map[uint64]File
 
 func IndexFromFile(storagedir string, depot int) (Index, error) {
 	file, err := os.Open(path.Join(storagedir, fmt.Sprintf("%d.index", depot)))
@@ -82,7 +82,7 @@ func indexFromReader(r io.Reader) (Index, error) {
 			chunks = append(chunks, Chunk{Offset: start, Length: length})
 		}
 
-		index[int(id)] = &File{Chunks: chunks, Mode: Mode(mode)}
+		index[id] = File{Chunks: chunks, Mode: Mode(mode)}
 	}
 
 	return index, nil
