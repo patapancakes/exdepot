@@ -151,6 +151,11 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 	bar := progressbar.Default(int64(len(manifest.Items)), "Extracting")
 
 	// create directories and files
+	err = os.MkdirAll(outpath, 0755)
+	if err != nil && !errors.Is(err, os.ErrExist) {
+		return fmt.Errorf("failed to create output directory: %s", err)
+	}
+
 	for _, i := range manifest.Items {
 		bar.Add(1)
 
