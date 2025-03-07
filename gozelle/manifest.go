@@ -129,7 +129,7 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 		}
 
 		var namebuf []byte
-		for i := 0; i < 256; i++ {
+		for range 256 {
 			b := make([]byte, 1)
 			_, err = r.Read(b)
 			if err != nil {
