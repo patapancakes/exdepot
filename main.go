@@ -19,7 +19,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -152,7 +151,7 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 
 	// create directories and files
 	err = os.MkdirAll(outpath, 0755)
-	if err != nil && !errors.Is(err, os.ErrExist) {
+	if err != nil && !os.IsExist(err) {
 		return fmt.Errorf("failed to create output directory: %s", err)
 	}
 
@@ -161,7 +160,7 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 
 		if i.IsDirectory() {
 			err := os.Mkdir(path.Join(outpath, i.Path), 0755)
-			if err != nil && !errors.Is(err, os.ErrExist) {
+			if err != nil && !os.IsExist(err) {
 				return fmt.Errorf("failed to create directory: %s", err)
 			}
 
