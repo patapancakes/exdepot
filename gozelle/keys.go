@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 )
 
@@ -32,23 +31,7 @@ type KeyFile struct {
 	Keys map[string]string `json:"keys"`
 }
 
-func KeysFromFile(path string) (Keys, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open keys file: %s", err)
-	}
-
-	defer file.Close()
-
-	index, err := keysFromReader(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read keys file: %s", err)
-	}
-
-	return index, nil
-}
-
-func keysFromReader(r io.Reader) (Keys, error) {
+func ReadKeys(r io.Reader) (Keys, error) {
 	var keyfile KeyFile
 	err := json.NewDecoder(r).Decode(&keyfile)
 	if err != nil {

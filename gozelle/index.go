@@ -22,8 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path"
 )
 
 type Mode int
@@ -37,23 +35,7 @@ const (
 
 type Index map[uint64]File
 
-func IndexFromFile(storagedir string, depot int) (Index, error) {
-	file, err := os.Open(path.Join(storagedir, fmt.Sprintf("%d.index", depot)))
-	if err != nil {
-		return nil, fmt.Errorf("failed to open index file: %s", err)
-	}
-
-	defer file.Close()
-
-	index, err := indexFromReader(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read index: %s", err)
-	}
-
-	return index, nil
-}
-
-func indexFromReader(r io.Reader) (Index, error) {
+func ReadIndex(r io.Reader) (Index, error) {
 	index := make(Index)
 
 	for {

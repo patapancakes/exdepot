@@ -22,7 +22,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"os"
 	"path"
 	"runtime"
 	"slices"
@@ -64,23 +63,7 @@ func (i Item) IsDirectory() bool {
 	return i.Type&0x4000 == 0
 }
 
-func ManifestFromFile(manifestdir string, depot int, version int) (Manifest, error) {
-	file, err := os.Open(path.Join(manifestdir, fmt.Sprintf("%d_%d.manifest", depot, version)))
-	if err != nil {
-		return Manifest{}, fmt.Errorf("failed to open manifest file: %s", err)
-	}
-
-	defer file.Close()
-
-	manifest, err := manifestFromReader(file)
-	if err != nil {
-		return manifest, fmt.Errorf("failed to read manifest: %s", err)
-	}
-
-	return manifest, nil
-}
-
-func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
+func ReadManifest(r io.ReadSeeker) (Manifest, error) {
 	var manifest Manifest
 
 	err := read(r, binary.LittleEndian, &manifest.Dummy1, &manifest.DepotID,

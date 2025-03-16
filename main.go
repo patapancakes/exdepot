@@ -60,9 +60,16 @@ func main() {
 
 	wg.Add(1)
 	go func() {
-		keys, err = gozelle.KeysFromFile(*keyfile)
+		f, err := os.Open(*keyfile)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("failed to open keys file: %s", err)
+		}
+
+		defer f.Close()
+
+		keys, err = gozelle.ReadKeys(f)
+		if err != nil {
+			log.Fatalf("failed to read keys file: %s", err)
 		}
 
 		wg.Done()
@@ -73,7 +80,14 @@ func main() {
 
 	wg.Add(1)
 	go func() {
-		manifest, err = gozelle.ManifestFromFile(*manifestdir, *depot, *version)
+		f, err := os.Open(path.Join(*manifestdir, fmt.Sprintf("%d_%d.manifest", *depot, *version)))
+		if err != nil {
+			log.Fatalf("failed to open manifest file: %s", err)
+		}
+
+		defer f.Close()
+
+		manifest, err = gozelle.ReadManifest(f)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -86,7 +100,14 @@ func main() {
 
 	wg.Add(1)
 	go func() {
-		index, err = gozelle.IndexFromFile(*storagedir, *depot)
+		f, err := os.Open(path.Join(*storagedir, fmt.Sprintf("%d.index", *depot)))
+		if err != nil {
+			log.Fatalf("failed to open index file: %s", err)
+		}
+
+		defer f.Close()
+
+		index, err = gozelle.ReadIndex(f)
 		if err != nil {
 			log.Fatal(err)
 		}
