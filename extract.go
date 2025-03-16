@@ -23,7 +23,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/patapancakes/exdepot/gozelle"
+	"github.com/patapancakes/gozelle"
 )
 
 type ExtractorJob struct {

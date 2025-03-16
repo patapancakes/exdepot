@@ -27,7 +27,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/patapancakes/exdepot/gozelle"
+	"github.com/patapancakes/gozelle"
 	"github.com/schollz/progressbar/v3"
 )
 
