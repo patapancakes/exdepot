@@ -22,34 +22,13 @@ import (
 	"io"
 )
 
-func readUint32List(r io.Reader, num int) ([]uint32, error) {
-	out := make([]uint32, num)
-
-	for i := range num {
-		b := make([]byte, 4)
-		_, err := r.Read(b)
+func read(r io.Reader, order binary.ByteOrder, data ...any) error {
+	for _, v := range data {
+		err := binary.Read(r, order, v)
 		if err != nil {
-			return nil, err
+			return err
 		}
-
-		out[i] = binary.LittleEndian.Uint32(b)
 	}
 
-	return out, nil
-}
-
-func readUint64List(r io.Reader, num int) ([]uint64, error) {
-	out := make([]uint64, num)
-
-	for i := range num {
-		b := make([]byte, 8)
-		_, err := r.Read(b)
-		if err != nil {
-			return nil, err
-		}
-
-		out[i] = binary.BigEndian.Uint64(b)
-	}
-
-	return out, nil
+	return nil
 }

@@ -18,6 +18,8 @@
 package gozelle
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
@@ -81,25 +83,13 @@ func ManifestFromFile(manifestdir string, depot int, version int) (Manifest, err
 func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 	var manifest Manifest
 
-	v, err := readUint32List(r, 14)
+	err := read(r, binary.LittleEndian, &manifest.Dummy1, &manifest.DepotID,
+		&manifest.DepotVersion, &manifest.NumItems, &manifest.NumFiles, &manifest.BlockSize,
+		&manifest.DirSize, &manifest.DirNameSize, &manifest.InfoCount, &manifest.CopyCount,
+		&manifest.LocalCount, &manifest.Dummy2, &manifest.Dummy3, &manifest.Checksum)
 	if err != nil {
 		return manifest, fmt.Errorf("failed to read value: %s", err)
 	}
-
-	manifest.Dummy1 = v[0]
-	manifest.DepotID = v[1]
-	manifest.DepotVersion = v[2]
-	manifest.NumItems = v[3]
-	manifest.NumFiles = v[4]
-	manifest.BlockSize = v[5]
-	manifest.DirSize = v[6]
-	manifest.DirNameSize = v[7]
-	manifest.InfoCount = v[8]
-	manifest.CopyCount = v[9]
-	manifest.LocalCount = v[10]
-	manifest.Dummy2 = v[11]
-	manifest.Dummy3 = v[12]
-	manifest.Checksum = v[13]
 
 	for i := range manifest.NumItems {
 		_, err = r.Seek(int64(56+(i*28)), 0)
@@ -107,20 +97,13 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 			return manifest, fmt.Errorf("failed to seek to item: %s", err)
 		}
 
+		var nameOffset uint32
 		var item Item
 
-		v, err := readUint32List(r, 7)
+		err = read(r, binary.LittleEndian, &nameOffset, &item.Size, &item.ID, &item.Type, &item.ParentIndex, &item.NextIndex, &item.FirstIndex)
 		if err != nil {
 			return manifest, fmt.Errorf("failed to read value: %s", err)
 		}
-
-		nameOffset := v[0]
-		item.Size = v[1]
-		item.ID = v[2]
-		item.Type = v[3]
-		item.ParentIndex = v[4]
-		item.NextIndex = v[5]
-		item.FirstIndex = v[6]
 
 		// name offset but no name size? really???
 		_, err = r.Seek(int64(56+(manifest.NumItems*28)+nameOffset), 0)
@@ -128,23 +111,18 @@ func manifestFromReader(r io.ReadSeeker) (Manifest, error) {
 			return manifest, fmt.Errorf("failed to seek to file name: %s", err)
 		}
 
-		var namebuf []byte
-		for range 256 {
-			b := make([]byte, 1)
-			_, err = r.Read(b)
-			if err != nil {
-				return manifest, fmt.Errorf("failed to read file name: %s", err)
-			}
-
-			// look for null terminator
-			if b[0] == 0x00 {
-				break
-			}
-
-			namebuf = append(namebuf, b...)
+		namebuf := make([]byte, 256)
+		_, err = r.Read(namebuf)
+		if err != nil {
+			return manifest, fmt.Errorf("failed to read file name: %s", err)
 		}
 
-		item.Name = string(namebuf)
+		end := bytes.Index(namebuf, []byte{0x00})
+		if end == -1 {
+			return manifest, fmt.Errorf("failed to read file name: couldn't find end")
+		}
+
+		item.Name = string(namebuf[:end])
 
 		// windows doesn't allow certain characters in file names
 		if runtime.GOOS == "windows" {

@@ -18,6 +18,7 @@
 package gozelle
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -56,7 +57,8 @@ func indexFromReader(r io.Reader) (Index, error) {
 	index := make(Index)
 
 	for {
-		v, err := readUint64List(r, 3)
+		var id, length, mode uint64
+		err := read(r, binary.BigEndian, &id, &length, &mode)
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				return index, err
@@ -65,19 +67,13 @@ func indexFromReader(r io.Reader) (Index, error) {
 			break
 		}
 
-		id := v[0]
-		length := v[1]
-		mode := v[2]
-
 		var chunks []Chunk
 		for i := 0; i < int(length); i += 0x10 {
-			v, err := readUint64List(r, 2)
+			var start, length uint64
+			err := read(r, binary.BigEndian, &start, &length)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read value: %s", err)
 			}
-
-			start := v[0]
-			length := v[1]
 
 			chunks = append(chunks, Chunk{Offset: start, Length: length})
 		}

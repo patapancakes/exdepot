@@ -22,6 +22,7 @@ import (
 	"compress/zlib"
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -79,15 +80,12 @@ func (c *Chunk) Prepare(key []byte, src io.ReaderAt, mode Mode) error {
 	c.data = bytes.NewReader(chunk)
 
 	// zlib buffer sizes if encrypted, not used
-	//var encSize, decSize uint32
+	var encSize, decSize uint32
 	if mode == EncryptedCompressed {
-		_, err := readUint32List(c.data, 2)
+		err = read(c.data, binary.LittleEndian, &encSize, &decSize)
 		if err != nil {
 			return fmt.Errorf("failed to read value: %s", err)
 		}
-
-		//encSize = v[0] // unused
-		//decSize = v[1] // unused
 	}
 
 	// decrypt
