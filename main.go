@@ -117,13 +117,6 @@ func main() {
 
 	wg.Wait()
 
-	if int(manifest.DepotID) != *depot {
-		log.Fatalf("manifest depot id %d does not match input %d", manifest.DepotID, *depot)
-	}
-	if int(manifest.DepotVersion) != *version {
-		log.Fatalf("manifest depot version %d does not match input %d", manifest.DepotVersion, *version)
-	}
-
 	switch *mode {
 	case "extract":
 		err = doExtract(*storagedir, *outpath, *workers, keys, manifest, index)
