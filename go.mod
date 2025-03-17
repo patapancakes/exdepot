@@ -3,7 +3,7 @@ module github.com/patapancakes/exdepot
 go 1.24.1
 
 require (
-	github.com/patapancakes/gozelle v0.0.0-20250316231325-b666bb367b2d
+	github.com/patapancakes/gozelle v0.0.0-20250317055217-7681011d9259
 	github.com/schollz/progressbar/v3 v3.18.0
 )
 
