@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 	"sync"
 
@@ -80,7 +80,7 @@ func main() {
 
 	wg.Add(1)
 	go func() {
-		f, err := os.Open(path.Join(*manifestdir, fmt.Sprintf("%d_%d.manifest", *depot, *version)))
+		f, err := os.Open(filepath.Join(*manifestdir, fmt.Sprintf("%d_%d.manifest", *depot, *version)))
 		if err != nil {
 			log.Fatalf("failed to open manifest file: %s", err)
 		}
@@ -100,7 +100,7 @@ func main() {
 
 	wg.Add(1)
 	go func() {
-		f, err := os.Open(path.Join(*storagedir, fmt.Sprintf("%d.index", *depot)))
+		f, err := os.Open(filepath.Join(*storagedir, fmt.Sprintf("%d.index", *depot)))
 		if err != nil {
 			log.Fatalf("failed to open index file: %s", err)
 		}
@@ -144,7 +144,7 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 	}
 
 	// extract
-	data, err := os.Open(path.Join(storagedir, fmt.Sprintf("%d.data", manifest.DepotID)))
+	data, err := os.Open(filepath.Join(storagedir, fmt.Sprintf("%d.data", manifest.DepotID)))
 	if err != nil {
 		return fmt.Errorf("failed to open data file: %s", err)
 	}
@@ -173,7 +173,7 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 		bar.Add(1)
 
 		if i.IsDirectory() {
-			err := os.Mkdir(path.Join(outpath, i.Path), 0755)
+			err := os.Mkdir(filepath.Join(outpath, i.Path), 0755)
 			if err != nil && !os.IsExist(err) {
 				return fmt.Errorf("failed to create directory: %s", err)
 			}
@@ -182,7 +182,7 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 		}
 
 		jobs <- ExtractorJob{
-			Path: path.Join(outpath, i.Path),
+			Path: filepath.Join(outpath, i.Path),
 			File: index[uint64(i.ID)],
 		}
 	}
