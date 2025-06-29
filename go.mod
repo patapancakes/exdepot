@@ -1,6 +1,6 @@
 module github.com/patapancakes/exdepot
 
-go 1.24.1
+go 1.24.4
 
 require (
 	github.com/patapancakes/gozelle v0.0.0-20250320031031-f3134f2916ae
