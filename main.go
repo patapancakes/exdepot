@@ -197,7 +197,7 @@ func doFileList(manifest gozelle.Manifest, outpath string) error {
 	w := os.Stdout
 	if outpath != "" {
 		var err error
-		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to open output file: %s", err)
 		}
@@ -221,7 +221,7 @@ func doManifestJSON(manifest gozelle.Manifest, outpath string) error {
 	w := os.Stdout
 	if outpath != "" {
 		var err error
-		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to open output file: %s", err)
 		}
@@ -239,7 +239,7 @@ func doIndexJSON(index gozelle.Index, outpath string) error {
 	w := os.Stdout
 	if outpath != "" {
 		var err error
-		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to open output file: %s", err)
 		}

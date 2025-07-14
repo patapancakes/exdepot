@@ -40,7 +40,7 @@ func extractorWorker(wg *sync.WaitGroup, jobs chan ExtractorJob, data io.ReaderA
 			break
 		}
 
-		out, err := os.OpenFile(job.Path, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+		out, err := os.OpenFile(job.Path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatalf("failed to open output file: %s", err)
 		}
