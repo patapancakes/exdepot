@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2024-2025  Pancakes <patapancakes@pagefault.games>
+	Copyright (C) 2024-2026  Pancakes <patapancakes@pagefault.games>
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/patapancakes/gozelle"
+	"github.com/patapancakes/exdepot/gozelle"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -58,8 +58,7 @@ func main() {
 	// keys
 	var keys gozelle.Keys
 
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		f, err := os.Open(*keyfile)
 		if err != nil {
 			log.Fatalf("failed to open keys file: %s", err)
@@ -71,15 +70,12 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to read keys file: %s", err)
 		}
-
-		wg.Done()
-	}()
+	})
 
 	// manifest
 	var manifest gozelle.Manifest
 
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		f, err := os.Open(filepath.Join(*manifestdir, fmt.Sprintf("%d_%d.manifest", *depot, *version)))
 		if err != nil {
 			log.Fatalf("failed to open manifest file: %s", err)
@@ -91,15 +87,12 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		wg.Done()
-	}()
+	})
 
 	// index
 	var index gozelle.Index
 
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		f, err := os.Open(filepath.Join(*storagedir, fmt.Sprintf("%d.index", *depot)))
 		if err != nil {
 			log.Fatalf("failed to open index file: %s", err)
@@ -111,9 +104,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		wg.Done()
-	}()
+	})
 
 	wg.Wait()
 

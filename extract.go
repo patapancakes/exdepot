@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2024-2025  Pancakes <patapancakes@pagefault.games>
+	Copyright (C) 2024-2026  Pancakes <patapancakes@pagefault.games>
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/patapancakes/gozelle"
+	"github.com/patapancakes/exdepot/gozelle"
 )
 
 type ExtractorJob struct {
