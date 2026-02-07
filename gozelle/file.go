@@ -47,8 +47,8 @@ func (f *File) Close() error {
 }
 
 func (f *File) Prepare(key []byte, src io.ReaderAt) error {
-	for i := range f.Blocks {
-		err := f.Blocks[i].Prepare(key, src, f.Mode)
+	for _, b := range f.Blocks {
+		err := b.Prepare(key, src, f.Mode)
 		if err != nil {
 			return err
 		}
