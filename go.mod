@@ -2,7 +2,10 @@ module github.com/patapancakes/exdepot
 
 go 1.25.7
 
-require github.com/schollz/progressbar/v3 v3.19.0
+require (
+	github.com/klauspost/compress v1.18.3
+	github.com/schollz/progressbar/v3 v3.19.0
+)
 
 require (
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect

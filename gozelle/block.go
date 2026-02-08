@@ -18,13 +18,14 @@
 package gozelle
 
 import (
-	"compress/zlib"
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
+
+	"github.com/klauspost/compress/zlib"
 )
 
 type Block struct {
