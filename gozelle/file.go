@@ -29,16 +29,10 @@ type File struct {
 }
 
 func (f *File) Read(dst []byte) (int, error) {
-	if f.data != nil {
-		return f.data.Read(dst)
+	if f.data == nil {
+		return 0, ErrBlockNotPrepared
 	}
 
-	var readers []io.Reader
-	for _, b := range f.Blocks {
-		readers = append(readers, b)
-	}
-
-	f.data = io.MultiReader(readers...)
 	return f.data.Read(dst)
 }
 
@@ -62,6 +56,13 @@ func (f *File) Prepare(key []byte, src io.ReaderAt) error {
 			return err
 		}
 	}
+
+	var readers []io.Reader
+	for _, b := range f.Blocks {
+		readers = append(readers, b)
+	}
+
+	f.data = io.MultiReader(readers...)
 
 	return nil
 }
