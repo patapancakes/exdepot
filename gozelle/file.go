@@ -24,15 +24,22 @@ import (
 type File struct {
 	Blocks []*Block `json:"blocks"`
 	Mode   Mode     `json:"mode"`
+
+	data io.Reader
 }
 
 func (f *File) Read(dst []byte) (int, error) {
+	if f.data != nil {
+		return f.data.Read(dst)
+	}
+
 	var readers []io.Reader
 	for _, b := range f.Blocks {
 		readers = append(readers, b)
 	}
 
-	return io.MultiReader(readers...).Read(dst)
+	f.data = io.MultiReader(readers...)
+	return f.data.Read(dst)
 }
 
 func (f *File) Close() error {
@@ -42,6 +49,8 @@ func (f *File) Close() error {
 			return err
 		}
 	}
+
+	f.data = nil
 
 	return nil
 }
