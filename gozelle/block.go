@@ -46,12 +46,7 @@ func (b *Block) Read(dst []byte) (int, error) {
 		return 0, ErrBlockNotPrepared
 	}
 
-	n, err := b.data.Read(dst)
-	if err != nil {
-		return n, err
-	}
-
-	return n, nil
+	return b.data.Read(dst)
 }
 
 func (b *Block) Close() error {
