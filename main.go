@@ -149,8 +149,7 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 	}
 
 	for range workers {
-		wg.Add(1)
-		go extractorWorker(&wg, jobs, data, block)
+		wg.Go(func() { extractorWorker(jobs, data, block) })
 	}
 
 	bar := progressbar.Default(int64(len(manifest.Items)), "Extracting")

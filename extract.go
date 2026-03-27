@@ -22,7 +22,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"sync"
 
 	"github.com/patapancakes/exdepot/gozelle"
 )
@@ -32,9 +31,7 @@ type ExtractorJob struct {
 	File *gozelle.File
 }
 
-func extractorWorker(wg *sync.WaitGroup, jobs chan ExtractorJob, data io.ReaderAt, block cipher.Block) {
-	defer wg.Done()
-
+func extractorWorker(jobs chan ExtractorJob, data io.ReaderAt, block cipher.Block) {
 	for {
 		job, ok := <-jobs
 		if !ok {
