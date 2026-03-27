@@ -18,8 +18,11 @@
 package gozelle
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -30,6 +33,8 @@ type Keys map[int][]byte
 type KeyFile struct {
 	Keys map[string]string `json:"keys"`
 }
+
+var ErrKeyNotFound = errors.New("key for depot not found")
 
 func ReadKeys(r io.Reader) (Keys, error) {
 	var keyfile KeyFile
@@ -55,4 +60,18 @@ func ReadKeys(r io.Reader) (Keys, error) {
 	}
 
 	return keys, nil
+}
+
+func (k Keys) CipherBlockFromID(id int) (cipher.Block, error) {
+	key, ok := k[id]
+	if !ok {
+		return nil, ErrKeyNotFound
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return block, nil
 }

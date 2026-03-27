@@ -19,8 +19,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -145,14 +143,9 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 	var wg sync.WaitGroup
 	jobs := make(chan ExtractorJob)
 
-	key := keys[int(manifest.DepotID)]
-
-	var block cipher.Block
-	if key != nil {
-		block, err = aes.NewCipher(key)
-		if err != nil {
-			log.Fatalf("failed to create aes cipher: %s", err)
-		}
+	block, err := keys.CipherBlockFromID(int(manifest.DepotID))
+	if err != nil {
+		log.Fatalf("failed to create depot cipher block: %s", err)
 	}
 
 	for range workers {
