@@ -99,7 +99,7 @@ func ReadManifest(r io.ReadSeeker) (Manifest, error) {
 		}
 
 		// name offset but no name size? really???
-		_, err = r.Seek(int64(56+(manifest.NumItems*28)+item.NameOffset), 0)
+		_, err = r.Seek(int64(56+(manifest.NumItems*28)+item.NameOffset), io.SeekStart)
 		if err != nil {
 			return manifest, fmt.Errorf("failed to seek to file name: %s", err)
 		}
