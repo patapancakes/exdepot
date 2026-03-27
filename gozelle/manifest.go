@@ -53,7 +53,7 @@ type Item struct {
 	NameOffset  uint32 `json:"nameOffset"`
 	Size        uint32 `json:"size"`
 	ID          uint32 `json:"id"`
-	Type        uint32 `json:"type"`
+	Flags       uint32 `json:"flags"`
 	ParentIndex uint32 `json:"parentIndex"`
 	NextIndex   uint32 `json:"nextIndex"`
 	FirstIndex  uint32 `json:"firstIndex"`
@@ -63,7 +63,15 @@ type Item struct {
 }
 
 func (i Item) IsDirectory() bool {
-	return i.Type&0x4000 == 0
+	return i.Flags&0x4000 == 0
+}
+
+func (i Item) IsReadOnly() bool {
+	return i.Flags&0x200 != 0
+}
+
+func (i Item) IsExecutable() bool {
+	return i.Flags&0x800 != 0
 }
 
 func ReadManifest(r io.ReadSeeker) (Manifest, error) {
@@ -83,7 +91,7 @@ func ReadManifest(r io.ReadSeeker) (Manifest, error) {
 		}
 
 		var item Item
-		err = read(r, binary.LittleEndian, &item.NameOffset, &item.Size, &item.ID, &item.Type, &item.ParentIndex, &item.NextIndex, &item.FirstIndex)
+		err = read(r, binary.LittleEndian, &item.NameOffset, &item.Size, &item.ID, &item.Flags, &item.ParentIndex, &item.NextIndex, &item.FirstIndex)
 		if err != nil {
 			return manifest, fmt.Errorf("failed to read value: %s", err)
 		}
