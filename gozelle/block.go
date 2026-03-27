@@ -18,7 +18,6 @@
 package gozelle
 
 import (
-	"crypto/aes"
 	"crypto/cipher"
 	"encoding/binary"
 	"errors"
@@ -66,7 +65,7 @@ func (b *Block) Close() error {
 	return nil
 }
 
-func (b *Block) Prepare(key []byte, src io.ReaderAt, mode Mode) error {
+func (b *Block) Prepare(block cipher.Block, src io.ReaderAt, mode Mode) error {
 	// why do zero-length blocks exist?
 	if b.Length == 0 {
 		return nil
@@ -85,13 +84,8 @@ func (b *Block) Prepare(key []byte, src io.ReaderAt, mode Mode) error {
 
 	// decrypt
 	if mode == EncryptedCompressed || mode == Encrypted {
-		if key == nil {
+		if block == nil {
 			return fmt.Errorf("missing decryption key")
-		}
-
-		block, err := aes.NewCipher(key)
-		if err != nil {
-			return fmt.Errorf("failed to create aes cipher: %s", err)
 		}
 
 		b.data = &cipher.StreamReader{S: cipher.NewCFBDecrypter(block, make([]byte, 0x10)), R: b.data}

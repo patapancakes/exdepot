@@ -18,6 +18,8 @@
 package main
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -147,9 +149,17 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 
 	key := keys[int(manifest.DepotID)]
 
+	var block cipher.Block
+	if key != nil {
+		block, err = aes.NewCipher(key)
+		if err != nil {
+			log.Fatalf("failed to create aes cipher: %s", err)
+		}
+	}
+
 	for range workers {
 		wg.Add(1)
-		go extractorWorker(&wg, jobs, data, key)
+		go extractorWorker(&wg, jobs, data, block)
 	}
 
 	bar := progressbar.Default(int64(len(manifest.Items)), "Extracting")

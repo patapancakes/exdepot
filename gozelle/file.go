@@ -18,6 +18,7 @@
 package gozelle
 
 import (
+	"crypto/cipher"
 	"io"
 )
 
@@ -49,7 +50,7 @@ func (f *File) Close() error {
 	return nil
 }
 
-func (f *File) Prepare(key []byte, src io.ReaderAt) error {
+func (f *File) Prepare(key cipher.Block, src io.ReaderAt) error {
 	for _, b := range f.Blocks {
 		err := b.Prepare(key, src, f.Mode)
 		if err != nil {

@@ -18,6 +18,7 @@
 package main
 
 import (
+	"crypto/cipher"
 	"io"
 	"log"
 	"os"
@@ -31,7 +32,7 @@ type ExtractorJob struct {
 	File *gozelle.File
 }
 
-func extractorWorker(wg *sync.WaitGroup, jobs chan ExtractorJob, data io.ReaderAt, key []byte) {
+func extractorWorker(wg *sync.WaitGroup, jobs chan ExtractorJob, data io.ReaderAt, block cipher.Block) {
 	defer wg.Done()
 
 	for {
@@ -45,7 +46,7 @@ func extractorWorker(wg *sync.WaitGroup, jobs chan ExtractorJob, data io.ReaderA
 			log.Fatalf("failed to open output file: %s", err)
 		}
 
-		err = job.File.Prepare(key, data)
+		err = job.File.Prepare(block, data)
 		if err != nil {
 			log.Fatalf("failed to prepare file for reading: %s", err)
 		}
