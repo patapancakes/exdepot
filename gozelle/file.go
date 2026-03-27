@@ -58,7 +58,7 @@ func (f *File) Prepare(key cipher.Block, src io.ReaderAt) error {
 		}
 	}
 
-	var readers []io.Reader
+	readers := make([]io.Reader, 0, len(f.Blocks))
 	for _, b := range f.Blocks {
 		readers = append(readers, b)
 	}
