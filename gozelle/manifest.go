@@ -84,6 +84,8 @@ func ReadManifest(r io.ReadSeeker) (Manifest, error) {
 		return manifest, fmt.Errorf("failed to read value: %s", err)
 	}
 
+	manifest.Items = make([]Item, 0, manifest.NumItems)
+
 	for i := range manifest.NumItems {
 		_, err = r.Seek(int64(56+(i*28)), io.SeekStart)
 		if err != nil {
