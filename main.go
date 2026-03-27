@@ -18,6 +18,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/json"
@@ -31,10 +32,14 @@ import (
 
 	"github.com/patapancakes/exdepot/gozelle"
 	"github.com/schollz/progressbar/v3"
+
+	_ "embed"
 )
 
+//go:embed depotkeys.json
+var depotKeys []byte
+
 func main() {
-	keyfile := flag.String("keyfile", "depotkeys.json", "path to depot keys file")
 	manifestdir := flag.String("manifestdir", "manifests", "path to manifests directory")
 	storagedir := flag.String("storagedir", "storages", "path to storages directory")
 	outpath := flag.String("outpath", "", "path to output directory or file")
@@ -61,14 +66,7 @@ func main() {
 	var keys gozelle.Keys
 
 	wg.Go(func() {
-		f, err := os.Open(*keyfile)
-		if err != nil {
-			log.Fatalf("failed to open keys file: %s", err)
-		}
-
-		defer f.Close()
-
-		keys, err = gozelle.ReadKeys(f)
+		keys, err = gozelle.ReadKeys(bytes.NewReader(depotKeys))
 		if err != nil {
 			log.Fatalf("failed to read keys file: %s", err)
 		}
