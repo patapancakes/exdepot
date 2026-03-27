@@ -50,9 +50,9 @@ func (f *File) Close() error {
 	return nil
 }
 
-func (f *File) Prepare(key cipher.Block, src io.ReaderAt) error {
+func (f *File) Prepare(block cipher.Block, src io.ReaderAt) error {
 	for _, b := range f.Blocks {
-		err := b.Prepare(key, src, f.Mode)
+		err := b.Prepare(block, src, f.Mode)
 		if err != nil {
 			return err
 		}
