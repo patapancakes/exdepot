@@ -52,7 +52,7 @@ func (f *File) Close() error {
 
 func (f *File) Prepare(block cipher.Block, src io.ReaderAt) error {
 	for _, b := range f.Blocks {
-		err := b.Prepare(block, src, f.Mode)
+		err := b.Prepare(block, io.NewSectionReader(src, int64(b.Offset), int64(b.Length)), f.Mode)
 		if err != nil {
 			return err
 		}

@@ -65,13 +65,13 @@ func (b *Block) Close() error {
 	return nil
 }
 
-func (b *Block) Prepare(block cipher.Block, src io.ReaderAt, mode Mode) error {
+func (b *Block) Prepare(block cipher.Block, src io.Reader, mode Mode) error {
 	// why do zero-length blocks exist?
 	if b.Length == 0 {
 		return nil
 	}
 
-	b.data = io.NewSectionReader(src, int64(b.Offset), int64(b.Length))
+	b.data = src
 
 	// zlib buffer sizes if encrypted, not used
 	var encSize, decSize uint32
