@@ -31,8 +31,7 @@ type Block struct {
 	Offset uint64 `json:"offset"`
 	Length uint64 `json:"length"`
 
-	data   io.Reader
-	closer io.Closer
+	data io.Reader
 }
 
 var ErrBlockNotPrepared = errors.New("block not prepared")
@@ -50,17 +49,17 @@ func (b *Block) Read(dst []byte) (int, error) {
 }
 
 func (b *Block) Close() error {
-	if b.closer == nil {
+	closer, ok := b.data.(io.Closer)
+	if !ok {
 		return nil
 	}
 
-	err := b.closer.Close()
+	err := closer.Close()
 	if err != nil {
 		return err
 	}
 
 	b.data = nil
-	b.closer = nil
 
 	return nil
 }
@@ -98,7 +97,6 @@ func (b *Block) Prepare(block cipher.Block, src io.Reader, mode Mode) error {
 			return fmt.Errorf("failed to create zlib reader: %s", err)
 		}
 
-		b.closer = zr
 		b.data = zr
 	}
 
