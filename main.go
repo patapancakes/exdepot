@@ -19,16 +19,19 @@ package main
 
 import (
 	"bytes"
+	"crypto/cipher"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
 
 	"github.com/patapancakes/exdepot/gozelle"
+	"github.com/patapancakes/exdepot/gozelle/gfs"
 	"github.com/schollz/progressbar/v3"
 
 	_ "embed"
@@ -106,9 +109,16 @@ func main() {
 
 	wg.Wait()
 
+	block, err := keys.CipherBlockFromID(int(manifest.DepotID))
+	if err != nil && err != gozelle.ErrKeyNotFound {
+		log.Fatalf("failed to create depot cipher block: %s", err)
+	}
+
 	switch *mode {
 	case "extract":
-		err = doExtract(*storagedir, *outpath, *workers, keys, manifest, index)
+		err = doExtract(*storagedir, *outpath, *workers, block, manifest, index)
+	case "web":
+		err = doWeb(*storagedir, block, manifest, index)
 	case "validate":
 		err = fmt.Errorf("not implemented yet")
 	case "filelist":
@@ -125,7 +135,7 @@ func main() {
 	}
 }
 
-func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys, manifest gozelle.Manifest, index gozelle.Index) error {
+func doExtract(storagedir string, outpath string, workers int, block cipher.Block, manifest gozelle.Manifest, index gozelle.Index) error {
 	fmt.Printf("Using %d extraction workers\n", workers)
 
 	if outpath == "" {
@@ -142,11 +152,6 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 
 	var wg sync.WaitGroup
 	jobs := make(chan ExtractorJob)
-
-	block, err := keys.CipherBlockFromID(int(manifest.DepotID))
-	if err != nil {
-		log.Fatalf("failed to create depot cipher block: %s", err)
-	}
 
 	for range workers {
 		wg.Go(func() { extractorWorker(jobs, data, block) })
@@ -182,6 +187,20 @@ func doExtract(storagedir string, outpath string, workers int, keys gozelle.Keys
 	wg.Wait()
 
 	return nil
+}
+
+func doWeb(storagedir string, block cipher.Block, manifest gozelle.Manifest, index gozelle.Index) error {
+	data, err := os.Open(filepath.Join(storagedir, fmt.Sprintf("%d.data", manifest.DepotID)))
+	if err != nil {
+		return fmt.Errorf("failed to open data file: %s", err)
+	}
+
+	defer data.Close()
+
+	fs, _ := gfs.NewFS(manifest, index, block, data)
+
+	http.Handle("/", http.FileServerFS(fs))
+	return http.ListenAndServe(":8000", nil)
 }
 
 func doFileList(manifest gozelle.Manifest, outpath string) error {
