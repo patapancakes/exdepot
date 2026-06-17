@@ -81,7 +81,7 @@ func ReadManifest(r io.ReadSeeker) (Manifest, error) {
 		&manifest.DirSize, &manifest.DirNameSize, &manifest.InfoCount, &manifest.CopyCount,
 		&manifest.LocalCount, &manifest.Dummy2, &manifest.Dummy3, &manifest.Checksum)
 	if err != nil {
-		return manifest, fmt.Errorf("failed to read value: %s", err)
+		return manifest, fmt.Errorf("failed to read value: %w", err)
 	}
 
 	manifest.Items = make([]Item, 0, manifest.NumItems)
@@ -89,25 +89,25 @@ func ReadManifest(r io.ReadSeeker) (Manifest, error) {
 	for i := range manifest.NumItems {
 		_, err = r.Seek(int64(56+(i*28)), io.SeekStart)
 		if err != nil {
-			return manifest, fmt.Errorf("failed to seek to item: %s", err)
+			return manifest, fmt.Errorf("failed to seek to item: %w", err)
 		}
 
 		var item Item
 		err = read(r, binary.LittleEndian, &item.NameOffset, &item.Size, &item.ID, &item.Flags, &item.ParentIndex, &item.NextIndex, &item.FirstIndex)
 		if err != nil {
-			return manifest, fmt.Errorf("failed to read value: %s", err)
+			return manifest, fmt.Errorf("failed to read value: %w", err)
 		}
 
 		// name offset but no name size? really???
 		_, err = r.Seek(int64(56+(manifest.NumItems*28)+item.NameOffset), io.SeekStart)
 		if err != nil {
-			return manifest, fmt.Errorf("failed to seek to file name: %s", err)
+			return manifest, fmt.Errorf("failed to seek to file name: %w", err)
 		}
 
 		namebuf := make([]byte, 256)
 		_, err = r.Read(namebuf)
 		if err != nil {
-			return manifest, fmt.Errorf("failed to read file name: %s", err)
+			return manifest, fmt.Errorf("failed to read file name: %w", err)
 		}
 
 		end := bytes.Index(namebuf, []byte{0x00})

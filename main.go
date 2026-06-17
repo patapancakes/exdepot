@@ -149,7 +149,7 @@ func doExtract(storagedir string, outpath string, workers int, block cipher.Bloc
 	// extract
 	data, err := os.Open(filepath.Join(storagedir, fmt.Sprintf("%d.data", manifest.DepotID)))
 	if err != nil {
-		return fmt.Errorf("failed to open data file: %s", err)
+		return fmt.Errorf("failed to open data file: %w", err)
 	}
 
 	defer data.Close()
@@ -162,7 +162,7 @@ func doExtract(storagedir string, outpath string, workers int, block cipher.Bloc
 	// create directories and files
 	err = os.MkdirAll(outpath, 0755)
 	if err != nil && !os.IsExist(err) {
-		return fmt.Errorf("failed to create output directory: %s", err)
+		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
 	for _, i := range manifest.Items {
@@ -171,7 +171,7 @@ func doExtract(storagedir string, outpath string, workers int, block cipher.Bloc
 		if i.IsDirectory() {
 			err := os.Mkdir(filepath.Join(outpath, i.Path), 0755)
 			if err != nil && !os.IsExist(err) {
-				return fmt.Errorf("failed to create directory: %s", err)
+				return fmt.Errorf("failed to create directory: %w", err)
 			}
 
 			continue
@@ -188,7 +188,7 @@ func doExtract(storagedir string, outpath string, workers int, block cipher.Bloc
 func doWeb(storagedir string, block cipher.Block, manifest gozelle.Manifest, index gozelle.Index) error {
 	data, err := os.Open(filepath.Join(storagedir, fmt.Sprintf("%d.data", manifest.DepotID)))
 	if err != nil {
-		return fmt.Errorf("failed to open data file: %s", err)
+		return fmt.Errorf("failed to open data file: %w", err)
 	}
 
 	defer data.Close()
@@ -205,7 +205,7 @@ func doFileList(manifest gozelle.Manifest, outpath string) error {
 		var err error
 		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 		if err != nil {
-			return fmt.Errorf("failed to open output file: %s", err)
+			return fmt.Errorf("failed to open output file: %w", err)
 		}
 	}
 
@@ -216,7 +216,7 @@ func doFileList(manifest gozelle.Manifest, outpath string) error {
 
 		_, err := w.Write([]byte(i.Path + "\n"))
 		if err != nil {
-			return fmt.Errorf("failed to write to output file: %s", err)
+			return fmt.Errorf("failed to write to output file: %w", err)
 		}
 	}
 
@@ -229,13 +229,13 @@ func doManifestJSON(manifest gozelle.Manifest, outpath string) error {
 		var err error
 		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 		if err != nil {
-			return fmt.Errorf("failed to open output file: %s", err)
+			return fmt.Errorf("failed to open output file: %w", err)
 		}
 	}
 
 	err := json.NewEncoder(w).Encode(manifest)
 	if err != nil {
-		return fmt.Errorf("failed to encode output json: %s", err)
+		return fmt.Errorf("failed to encode output json: %w", err)
 	}
 
 	return nil
@@ -247,13 +247,13 @@ func doIndexJSON(index gozelle.Index, outpath string) error {
 		var err error
 		w, err = os.OpenFile(outpath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 		if err != nil {
-			return fmt.Errorf("failed to open output file: %s", err)
+			return fmt.Errorf("failed to open output file: %w", err)
 		}
 	}
 
 	err := json.NewEncoder(w).Encode(index)
 	if err != nil {
-		return fmt.Errorf("failed to encode output json: %s", err)
+		return fmt.Errorf("failed to encode output json: %w", err)
 	}
 
 	return nil

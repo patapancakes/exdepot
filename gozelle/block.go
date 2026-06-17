@@ -77,7 +77,7 @@ func (b *Block) Prepare(block cipher.Block, src io.Reader, mode Mode) error {
 	if mode == EncryptedCompressed {
 		err := read(b.data, binary.LittleEndian, &encSize, &decSize)
 		if err != nil {
-			return fmt.Errorf("failed to read value: %s", err)
+			return fmt.Errorf("failed to read value: %w", err)
 		}
 	}
 
@@ -94,7 +94,7 @@ func (b *Block) Prepare(block cipher.Block, src io.Reader, mode Mode) error {
 	if mode == EncryptedCompressed || mode == Compressed {
 		zr, err := zlib.NewReader(b.data)
 		if err != nil {
-			return fmt.Errorf("failed to create zlib reader: %s", err)
+			return fmt.Errorf("failed to create zlib reader: %w", err)
 		}
 
 		b.data = zr

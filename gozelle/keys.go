@@ -40,7 +40,7 @@ func ReadKeys(r io.Reader) (Keys, error) {
 	var keyfile KeyFile
 	err := json.NewDecoder(r).Decode(&keyfile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode json: %s", err)
+		return nil, fmt.Errorf("failed to decode json: %w", err)
 	}
 
 	keys := make(Keys)
@@ -48,12 +48,12 @@ func ReadKeys(r io.Reader) (Keys, error) {
 	for depot, key := range keyfile.Keys {
 		depotInt, err := strconv.Atoi(depot)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode depot id: %s", err)
+			return nil, fmt.Errorf("failed to decode depot id: %w", err)
 		}
 
 		keyBytes, err := hex.DecodeString(key)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode key: %s", err)
+			return nil, fmt.Errorf("failed to decode key: %w", err)
 		}
 
 		keys[depotInt] = keyBytes

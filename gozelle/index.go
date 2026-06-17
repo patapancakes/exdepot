@@ -57,7 +57,7 @@ func ReadIndex(r io.Reader) (Index, error) {
 			err := read(br, binary.BigEndian, &b.Offset, &b.Length)
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
-					return nil, fmt.Errorf("failed to read value: %s", err)
+					return nil, fmt.Errorf("failed to read value: %w", err)
 				}
 
 				break
