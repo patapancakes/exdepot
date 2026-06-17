@@ -28,11 +28,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sync"
 
 	"github.com/patapancakes/exdepot/gozelle"
 	"github.com/patapancakes/exdepot/gozelle/gfs"
 	"github.com/schollz/progressbar/v3"
+	"golang.org/x/sync/errgroup"
 
 	_ "embed"
 )
@@ -59,59 +59,63 @@ func main() {
 	}
 
 	// async related
-	var wg sync.WaitGroup
-
-	var err error
+	var eg errgroup.Group
 
 	// keys
-	var keys gozelle.Keys
-
-	wg.Go(func() {
-		keys, err = gozelle.ReadKeys(bytes.NewReader(depotKeys))
+	var block cipher.Block
+	eg.Go(func() error {
+		keys, err := gozelle.ReadKeys(bytes.NewReader(depotKeys))
 		if err != nil {
-			log.Fatalf("failed to read keys file: %s", err)
+			return fmt.Errorf("failed to read keys file: %w", err)
 		}
+
+		block, err = keys.CipherBlockFromID(*depot)
+		if err != nil && err != gozelle.ErrKeyNotFound {
+			return fmt.Errorf("failed to create depot cipher block: %w", err)
+		}
+
+		return nil
 	})
 
 	// manifest
 	var manifest gozelle.Manifest
-
-	wg.Go(func() {
+	eg.Go(func() error {
 		f, err := os.Open(filepath.Join(*manifestdir, fmt.Sprintf("%d_%d.manifest", *depot, *version)))
 		if err != nil {
-			log.Fatalf("failed to open manifest file: %s", err)
+			return fmt.Errorf("failed to open manifest file: %w", err)
 		}
 
 		defer f.Close()
 
 		manifest, err = gozelle.ReadManifest(f)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
+
+		return nil
 	})
 
 	// index
 	var index gozelle.Index
-
-	wg.Go(func() {
+	eg.Go(func() error {
 		f, err := os.Open(filepath.Join(*storagedir, fmt.Sprintf("%d.index", *depot)))
 		if err != nil {
-			log.Fatalf("failed to open index file: %s", err)
+			return fmt.Errorf("failed to open index file: %w", err)
 		}
 
 		defer f.Close()
 
 		index, err = gozelle.ReadIndex(f)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
+
+		return nil
 	})
 
-	wg.Wait()
-
-	block, err := keys.CipherBlockFromID(int(manifest.DepotID))
-	if err != nil && err != gozelle.ErrKeyNotFound {
-		log.Fatalf("failed to create depot cipher block: %s", err)
+	err := eg.Wait()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	switch *mode {
@@ -150,12 +154,8 @@ func doExtract(storagedir string, outpath string, workers int, block cipher.Bloc
 
 	defer data.Close()
 
-	var wg sync.WaitGroup
-	jobs := make(chan ExtractorJob)
-
-	for range workers {
-		wg.Go(func() { extractorWorker(jobs, data, block) })
-	}
+	var eg errgroup.Group
+	eg.SetLimit(workers)
 
 	bar := progressbar.Default(int64(len(manifest.Items)), "Extracting")
 
@@ -177,16 +177,12 @@ func doExtract(storagedir string, outpath string, workers int, block cipher.Bloc
 			continue
 		}
 
-		jobs <- ExtractorJob{
-			Path: filepath.Join(outpath, i.Path),
-			File: index[uint64(i.ID)],
-		}
+		eg.Go(func() error {
+			return extractorWorker(filepath.Join(outpath, i.Path), index[uint64(i.ID)], data, block)
+		})
 	}
 
-	close(jobs)
-	wg.Wait()
-
-	return nil
+	return eg.Wait()
 }
 
 func doWeb(storagedir string, block cipher.Block, manifest gozelle.Manifest, index gozelle.Index) error {

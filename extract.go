@@ -19,8 +19,8 @@ package main
 
 import (
 	"crypto/cipher"
+	"fmt"
 	"io"
-	"log"
 	"os"
 
 	"github.com/patapancakes/exdepot/gozelle"
@@ -31,36 +31,31 @@ type ExtractorJob struct {
 	File *gozelle.File
 }
 
-func extractorWorker(jobs chan ExtractorJob, data io.ReaderAt, block cipher.Block) {
-	for {
-		job, ok := <-jobs
-		if !ok {
-			break
-		}
-
-		out, err := os.OpenFile(job.Path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatalf("failed to open output file: %s", err)
-		}
-
-		err = job.File.Prepare(block, data)
-		if err != nil {
-			log.Fatalf("failed to prepare file for reading: %s", err)
-		}
-
-		_, err = io.Copy(out, job.File)
-		if err != nil {
-			log.Fatalf("failed to extract cache file: %s", err)
-		}
-
-		err = job.File.Close()
-		if err != nil {
-			log.Fatalf("failed to close cache file: %s", err)
-		}
-
-		err = out.Close()
-		if err != nil {
-			log.Fatalf("failed to close output file: %s", err)
-		}
+func extractorWorker(path string, file *gozelle.File, data io.ReaderAt, block cipher.Block) error {
+	out, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open output file: %w", err)
 	}
+
+	err = file.Prepare(block, data)
+	if err != nil {
+		return fmt.Errorf("failed to prepare file for reading: %w", err)
+	}
+
+	_, err = io.Copy(out, file)
+	if err != nil {
+		return fmt.Errorf("failed to extract cache file: %w", err)
+	}
+
+	err = file.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close cache file: %w", err)
+	}
+
+	err = out.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close output file: %w", err)
+	}
+
+	return nil
 }

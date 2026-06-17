@@ -5,6 +5,7 @@ go 1.25.7
 require (
 	github.com/klauspost/compress v1.18.3
 	github.com/schollz/progressbar/v3 v3.19.0
+	golang.org/x/sync v0.21.0
 )
 
 require (
