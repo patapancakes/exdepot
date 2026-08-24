@@ -22,9 +22,16 @@ import (
 	"io"
 )
 
+type FileHeader struct {
+	ID     uint64
+	Length uint64
+	Mode   Mode
+}
+
 type File struct {
+	FileHeader
+
 	Blocks []*Block `json:"blocks"`
-	Mode   Mode     `json:"mode"`
 
 	data io.Reader
 }

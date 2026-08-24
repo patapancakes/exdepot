@@ -30,7 +30,7 @@ import (
 
 var sanitize = strings.NewReplacer("\\", "", "/", "", ":", "", "*", "", "\"", "", "<", "", ">", "", "|", "").Replace
 
-type Manifest struct {
+type ManifestHeader struct {
 	Dummy1       uint32 `json:"dummy1"`
 	DepotID      uint32 `json:"depotID"`
 	DepotVersion uint32 `json:"depotVersion"`
@@ -45,11 +45,15 @@ type Manifest struct {
 	Dummy2       uint32 `json:"dummy2"`
 	Dummy3       uint32 `json:"dummy3"`
 	Checksum     uint32 `json:"checksum"`
+}
+
+type Manifest struct {
+	ManifestHeader
 
 	Items []Item `json:"items"`
 }
 
-type Item struct {
+type ItemHeader struct {
 	NameOffset  uint32 `json:"nameOffset"`
 	Size        uint32 `json:"size"`
 	ID          uint32 `json:"id"`
@@ -57,6 +61,10 @@ type Item struct {
 	ParentIndex uint32 `json:"parentIndex"`
 	NextIndex   uint32 `json:"nextIndex"`
 	FirstIndex  uint32 `json:"firstIndex"`
+}
+
+type Item struct {
+	ItemHeader
 
 	Name string `json:"name"`
 	Path string `json:"path"`
@@ -76,12 +84,9 @@ func (i Item) IsExecutable() bool {
 
 func ReadManifest(r io.ReadSeeker) (Manifest, error) {
 	var manifest Manifest
-	err := read(r, binary.LittleEndian, &manifest.Dummy1, &manifest.DepotID,
-		&manifest.DepotVersion, &manifest.NumItems, &manifest.NumFiles, &manifest.BlockSize,
-		&manifest.DirSize, &manifest.DirNameSize, &manifest.InfoCount, &manifest.CopyCount,
-		&manifest.LocalCount, &manifest.Dummy2, &manifest.Dummy3, &manifest.Checksum)
+	err := binary.Read(r, binary.LittleEndian, &manifest.ManifestHeader)
 	if err != nil {
-		return manifest, fmt.Errorf("failed to read value: %w", err)
+		return Manifest{}, fmt.Errorf("failed to read manifest: %w", err)
 	}
 
 	manifest.Items = make([]Item, 0, manifest.NumItems)
@@ -93,9 +98,9 @@ func ReadManifest(r io.ReadSeeker) (Manifest, error) {
 		}
 
 		var item Item
-		err = read(r, binary.LittleEndian, &item.NameOffset, &item.Size, &item.ID, &item.Flags, &item.ParentIndex, &item.NextIndex, &item.FirstIndex)
+		err = binary.Read(r, binary.LittleEndian, &item.ItemHeader)
 		if err != nil {
-			return manifest, fmt.Errorf("failed to read value: %w", err)
+			return manifest, fmt.Errorf("failed to read item entry: %w", err)
 		}
 
 		// name offset but no name size? really???

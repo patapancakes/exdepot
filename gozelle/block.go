@@ -19,7 +19,6 @@ package gozelle
 
 import (
 	"crypto/cipher"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -27,9 +26,13 @@ import (
 	"github.com/klauspost/compress/zlib"
 )
 
-type Block struct {
+type BlockHeader struct {
 	Offset uint64 `json:"offset"`
 	Length uint64 `json:"length"`
+}
+
+type Block struct {
+	BlockHeader
 
 	data io.Reader
 }
@@ -73,12 +76,8 @@ func (b *Block) Prepare(block cipher.Block, src io.Reader, mode Mode) error {
 	b.data = src
 
 	// zlib buffer sizes if encrypted, not used
-	var encSize, decSize uint32
 	if mode == EncryptedCompressed {
-		err := read(b.data, binary.LittleEndian, &encSize, &decSize)
-		if err != nil {
-			return fmt.Errorf("failed to read value: %w", err)
-		}
+		io.CopyN(io.Discard, src, 4+4) // encSize, decSize uint32
 	}
 
 	// decrypt

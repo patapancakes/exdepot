@@ -40,8 +40,7 @@ func ReadIndex(r io.Reader) (Index, error) {
 
 	for {
 		var f File
-		var id, length uint64
-		err := read(r, binary.BigEndian, &id, &length, &f.Mode)
+		err := binary.Read(r, binary.BigEndian, &f.FileHeader)
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				return nil, err
@@ -50,14 +49,14 @@ func ReadIndex(r io.Reader) (Index, error) {
 			break
 		}
 
-		br := io.LimitReader(r, int64(length))
+		br := io.LimitReader(r, int64(f.Length))
 
 		for {
 			var b Block
-			err := read(br, binary.BigEndian, &b.Offset, &b.Length)
+			err := binary.Read(br, binary.BigEndian, &b.BlockHeader)
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
-					return nil, fmt.Errorf("failed to read value: %w", err)
+					return nil, fmt.Errorf("failed to read index entry: %w", err)
 				}
 
 				break
@@ -66,7 +65,7 @@ func ReadIndex(r io.Reader) (Index, error) {
 			f.Blocks = append(f.Blocks, &b)
 		}
 
-		index[id] = &f
+		index[f.ID] = &f
 	}
 
 	return index, nil
